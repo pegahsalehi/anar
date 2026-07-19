@@ -13,68 +13,73 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 import { SettingsAccordionCard } from "@/features/settings/components/settings-accordion-card";
-import { saveDailyGoalRangesAction } from "@/features/settings/actions";
+import { saveDailyNutritionTargetsAction } from "@/features/settings/actions";
 import {
-  initialDailyGoalRangeActionState,
-  type DailyGoalRangeField,
-  type DailyGoalRangeValues,
+  NutrientSurface,
+  nutrientPalette,
+  type NutrientVariant,
+} from "@/components/nutrition/nutrient-theme";
+import {
+  initialDailyNutritionTargetActionState,
+  type DailyNutritionTargetField,
+  type DailyNutritionTargetValues,
 } from "@/features/settings/types";
 import { formatDecimal, formatInteger } from "@/lib/format";
 import {
   getGoalNumberValidationError,
-  validateDailyGoalRangeFormData,
+  validateDailyNutritionTargetFormData,
 } from "@/features/settings/validation";
 import { cn } from "@/lib/utils";
 
-type DailyGoalRangesFormProps = {
+type DailyNutritionTargetsFormProps = {
   effectiveDate: string;
-  initialValues: DailyGoalRangeValues;
+  initialValues: DailyNutritionTargetValues;
 };
 
 const nutrients: Array<{
   label: string;
-  minName: DailyGoalRangeField;
-  maxName: DailyGoalRangeField;
+  name: DailyNutritionTargetField;
   unit: "cal" | "g";
+  variant: NutrientVariant;
 }> = [
   {
     label: "Calories",
-    minName: "caloriesMin",
-    maxName: "caloriesMax",
+    name: "caloriesTarget",
     unit: "cal",
+    variant: "calories",
   },
   {
     label: "Protein",
-    minName: "proteinMin",
-    maxName: "proteinMax",
+    name: "proteinTarget",
     unit: "g",
+    variant: "protein",
   },
   {
     label: "Carbs",
-    minName: "carbohydratesMin",
-    maxName: "carbohydratesMax",
+    name: "carbohydratesTarget",
     unit: "g",
+    variant: "carbs",
   },
   {
     label: "Fat",
-    minName: "fatMin",
-    maxName: "fatMax",
+    name: "fatTarget",
     unit: "g",
+    variant: "fat",
   },
 ];
 
-export function DailyGoalRangesForm({
+export function DailyNutritionTargetsForm({
   effectiveDate,
   initialValues,
-}: DailyGoalRangesFormProps) {
+}: DailyNutritionTargetsFormProps) {
   const [state, formAction] = useActionState(
-    saveDailyGoalRangesAction,
-    initialDailyGoalRangeActionState,
+    saveDailyNutritionTargetsAction,
+    initialDailyNutritionTargetActionState,
   );
   const [clientFieldErrors, setClientFieldErrors] =
     useState<typeof state.fieldErrors>({});
   const [savedValues, setSavedValues] = useState(initialValues);
-  const pendingValuesRef = useRef<DailyGoalRangeValues | null>(null);
+  const pendingValuesRef = useRef<DailyNutritionTargetValues | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -89,7 +94,7 @@ export function DailyGoalRangesForm({
   }, [router, state]);
 
   function validateClientForm(event: FormEvent<HTMLFormElement>) {
-    const result = validateDailyGoalRangeFormData(new FormData(event.currentTarget));
+    const result = validateDailyNutritionTargetFormData(new FormData(event.currentTarget));
 
     if (!result.ok) {
       pendingValuesRef.current = null;
@@ -102,7 +107,7 @@ export function DailyGoalRangesForm({
     setClientFieldErrors({});
   }
 
-  function handleInputChange(field: DailyGoalRangeField, event: ChangeEvent<HTMLInputElement>) {
+  function handleInputChange(field: DailyNutritionTargetField, event: ChangeEvent<HTMLInputElement>) {
     const error = getGoalNumberValidationError(event.currentTarget.value);
     setClientFieldErrors((currentErrors) =>
       error
@@ -111,21 +116,21 @@ export function DailyGoalRangesForm({
     );
   }
 
-  function getFieldError(field: DailyGoalRangeField) {
+  function getFieldError(field: DailyNutritionTargetField) {
     return clientFieldErrors[field] ?? state.fieldErrors[field];
   }
 
-  const summary = formatDailyGoalRangeSummary(savedValues);
+  const summary = formatDailyNutritionTargetSummary(savedValues);
 
   return (
     <SettingsAccordionCard
       defaultOpen
-      description="Set the nutrition range Anar should use from today forward."
+      description="Set the daily nutrition targets Anar should use from today forward."
       summary={summary}
-      title="Daily goal ranges"
+      title="Daily nutrition targets"
     >
       {effectiveDate ? (
-        <span className="inline-flex w-fit rounded-sm bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+        <span className="inline-flex w-fit rounded-sm border border-effective-badge-border bg-effective-badge px-3 py-1.5 text-xs font-semibold text-effective-badge-foreground">
           Effective {effectiveDate}
         </span>
       ) : null}
@@ -135,35 +140,34 @@ export function DailyGoalRangesForm({
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {nutrients.map((nutrient) => (
-            <section
-              className="rounded-md border border-border bg-background/60 p-4"
-              key={nutrient.label}
+            <NutrientSurface
+              as="section"
+              className="p-4"
+              key={nutrient.variant}
+              variant={nutrient.variant}
             >
-              <h3 className="text-sm font-semibold text-foreground">{nutrient.label}</h3>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <h3
+                className="text-sm font-semibold"
+                style={{ color: nutrientPalette[nutrient.variant].color }}
+              >
+                {nutrient.label}
+              </h3>
+              <div className="mt-3">
                 <GoalInput
-                  defaultValue={initialValues[nutrient.minName]}
-                  error={getFieldError(nutrient.minName)}
-                  label="Minimum"
-                  name={nutrient.minName}
-                  onChange={handleInputChange}
-                  unit={nutrient.unit}
-                />
-                <GoalInput
-                  defaultValue={initialValues[nutrient.maxName]}
-                  error={getFieldError(nutrient.maxName)}
-                  label="Maximum"
-                  name={nutrient.maxName}
+                  defaultValue={initialValues[nutrient.name]}
+                  error={getFieldError(nutrient.name)}
+                  label="Daily target"
+                  name={nutrient.name}
                   onChange={handleInputChange}
                   unit={nutrient.unit}
                 />
               </div>
-            </section>
+            </NutrientSurface>
           ))}
         </div>
 
         <div className="mt-5 flex justify-end">
-          <SettingsSubmitButton>Save goal ranges</SettingsSubmitButton>
+          <SettingsSubmitButton>Save targets</SettingsSubmitButton>
         </div>
       </form>
     </SettingsAccordionCard>
@@ -181,8 +185,8 @@ function GoalInput({
   defaultValue: number;
   error?: string;
   label: string;
-  name: DailyGoalRangeField;
-  onChange: (field: DailyGoalRangeField, event: ChangeEvent<HTMLInputElement>) => void;
+  name: DailyNutritionTargetField;
+  onChange: (field: DailyNutritionTargetField, event: ChangeEvent<HTMLInputElement>) => void;
   unit: "cal" | "g";
 }) {
   const errorId = `${name}-error`;
@@ -192,7 +196,8 @@ function GoalInput({
       <span className="text-xs font-semibold text-muted-foreground">{label}</span>
       <span
         className={cn(
-          "mt-1.5 flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-3 shadow-sm transition focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/20",
+          "mt-1.5 flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-3 shadow-sm transition focus-within:ring-4",
+          "focus-within:border-[var(--nutrient-color)] focus-within:ring-[var(--nutrient-ring)]",
           error && "border-coral focus-within:border-coral focus-within:ring-coral/15",
         )}
       >
@@ -206,7 +211,12 @@ function GoalInput({
           onChange={(event) => onChange(name, event)}
           type="text"
         />
-        <span className="shrink-0 text-xs font-semibold text-muted-foreground">{unit}</span>
+        <span
+          className="shrink-0 text-xs font-semibold"
+          style={{ color: "var(--nutrient-color)" }}
+        >
+          {unit}
+        </span>
       </span>
       {error ? (
         <span className="mt-1.5 block text-xs font-medium text-coral" id={errorId} role="alert">
@@ -243,13 +253,19 @@ export function SettingsActionMessage({
   );
 }
 
-export function SettingsSubmitButton({ children }: { children: ReactNode }) {
+export function SettingsSubmitButton({
+  children,
+  disabled = false,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
 
   return (
     <button
       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-wait disabled:opacity-70"
-      disabled={pending}
+      disabled={pending || disabled}
       type="submit"
     >
       <Save aria-hidden="true" className="h-4 w-4" />
@@ -259,19 +275,19 @@ export function SettingsSubmitButton({ children }: { children: ReactNode }) {
 }
 
 function removeFieldError(
-  errors: Partial<Record<DailyGoalRangeField, string>>,
-  field: DailyGoalRangeField,
+  errors: Partial<Record<DailyNutritionTargetField, string>>,
+  field: DailyNutritionTargetField,
 ) {
   const nextErrors = { ...errors };
   delete nextErrors[field];
   return nextErrors;
 }
 
-function formatDailyGoalRangeSummary(values: DailyGoalRangeValues) {
+function formatDailyNutritionTargetSummary(values: DailyNutritionTargetValues) {
   return [
-    `Calories ${formatInteger(values.caloriesMin)}-${formatInteger(values.caloriesMax)} cal`,
-    `Protein ${formatDecimal(values.proteinMin)}-${formatDecimal(values.proteinMax)} g`,
-    `Carbs ${formatDecimal(values.carbohydratesMin)}-${formatDecimal(values.carbohydratesMax)} g`,
-    `Fat ${formatDecimal(values.fatMin)}-${formatDecimal(values.fatMax)} g`,
+    `Calories ${formatInteger(values.caloriesTarget)} cal`,
+    `Protein ${formatDecimal(values.proteinTarget)} g`,
+    `Carbs ${formatDecimal(values.carbohydratesTarget)} g`,
+    `Fat ${formatDecimal(values.fatTarget)} g`,
   ].join(" | ");
 }

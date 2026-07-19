@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseGoalNumberInput, goalRangeOrderMessage } from "@/features/settings/validation";
+import { parseGoalNumberInput } from "@/features/settings/validation";
 
 const goalNumberSchema = z.unknown().transform((value, context) => {
   const parsed = parseGoalNumberInput(value);
@@ -16,28 +16,12 @@ const goalNumberSchema = z.unknown().transform((value, context) => {
   return parsed.value;
 });
 
-export const dailyGoalRangesSchema = z
-  .object({
-    caloriesMin: goalNumberSchema,
-    caloriesMax: goalNumberSchema,
-    proteinMin: goalNumberSchema,
-    proteinMax: goalNumberSchema,
-    carbohydratesMin: goalNumberSchema,
-    carbohydratesMax: goalNumberSchema,
-    fatMin: goalNumberSchema,
-    fatMax: goalNumberSchema,
-  })
-  .superRefine((data, context) => {
-    addRangeIssue(context, data.caloriesMin, data.caloriesMax, "caloriesMin");
-    addRangeIssue(context, data.proteinMin, data.proteinMax, "proteinMin");
-    addRangeIssue(
-      context,
-      data.carbohydratesMin,
-      data.carbohydratesMax,
-      "carbohydratesMin",
-    );
-    addRangeIssue(context, data.fatMin, data.fatMax, "fatMin");
-  });
+export const dailyNutritionTargetsSchema = z.object({
+  caloriesTarget: goalNumberSchema,
+  proteinTarget: goalNumberSchema,
+  carbohydratesTarget: goalNumberSchema,
+  fatTarget: goalNumberSchema,
+});
 
 export const changePasswordSchema = z
   .object({
@@ -54,19 +38,11 @@ export const changePasswordSchema = z
     path: ["confirmNewPassword"],
   });
 
-function addRangeIssue(
-  context: z.RefinementCtx,
-  minValue: number,
-  maxValue: number,
-  path: string,
-) {
-  if (minValue <= maxValue) {
-    return;
-  }
-
-  context.addIssue({
-    code: z.ZodIssueCode.custom,
-    message: goalRangeOrderMessage,
-    path: [path],
-  });
-}
+export const appPreferencesSchema = z.object({
+  weekStartsOn: z.enum(["sunday", "monday"], {
+    error: "Choose whether weeks start on Sunday or Monday.",
+  }),
+  timeFormat: z.enum(["12h", "24h"], {
+    error: "Choose a time format.",
+  }),
+});

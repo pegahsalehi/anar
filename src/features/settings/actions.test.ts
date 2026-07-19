@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { goalRangeOrderMessage } from "@/features/settings/validation";
-import type { DailyGoalRangeActionState } from "@/features/settings/types";
+import type {
+  AppPreferenceActionState,
+  DailyNutritionTargetActionState,
+} from "@/features/settings/types";
 
 const { createServerSupabaseClientMock, revalidatePathMock } = vi.hoisted(() => ({
   createServerSupabaseClientMock: vi.fn(),
@@ -15,7 +17,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
-describe("saveDailyGoalRangesAction", () => {
+describe("saveDailyNutritionTargetsAction", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-19T12:00:00.000Z"));
@@ -30,7 +32,7 @@ describe("saveDailyGoalRangesAction", () => {
     vi.restoreAllMocks();
   });
 
-  it("saves valid ranges for the authenticated user and revalidates dependent pages", async () => {
+  it("saves valid targets for the authenticated user and revalidates dependent pages", async () => {
     const insertMock = vi.fn().mockResolvedValue({ error: null });
     const maybeSingleMock = vi
       .fn()
@@ -43,31 +45,23 @@ describe("saveDailyGoalRangesAction", () => {
     });
     createServerSupabaseClientMock.mockResolvedValue(supabase);
 
-    const result = await save(formDataWithRanges());
+    const result = await save(formDataWithTargets());
 
     expect(result).toEqual({
       status: "success",
-      message: "Daily goal ranges saved.",
+      message: "Daily nutrition targets saved.",
       fieldErrors: {},
     });
     expect(insertMock).toHaveBeenCalledWith({
       user_id: "user-1",
       effective_date: "2026-07-19",
-      calories_target: 1700,
-      protein_target: 120,
-      carbohydrates_target: 230,
-      fat_target: 70,
-      calories_min: 1500,
-      calories_max: 1700,
-      protein_min: 90,
-      protein_max: 120,
-      carbohydrates_min: 180,
-      carbohydrates_max: 230,
-      fat_min: 50,
-      fat_max: 70,
+      calories_target: 1600,
+      protein_target: 105,
+      carbohydrates_target: 205,
+      fat_target: 60,
     });
     expect(console.info).toHaveBeenCalledWith(
-      "[settings:saveDailyGoalRanges] Authenticated user session confirmed.",
+      "[settings:saveDailyNutritionTargets] Authenticated user session confirmed.",
       { userId: "user-1" },
     );
     expect(revalidatePathMock).toHaveBeenCalledWith("/settings");
@@ -75,7 +69,7 @@ describe("saveDailyGoalRangesAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/history");
   });
 
-  it("updates today's existing goal range for the authenticated user", async () => {
+  it("updates today's existing nutrition targets for the authenticated user", async () => {
     const updateMock = vi.fn(() => ({ error: null }));
     const maybeSingleMock = vi
       .fn()
@@ -89,40 +83,31 @@ describe("saveDailyGoalRangesAction", () => {
     });
     createServerSupabaseClientMock.mockResolvedValue(supabase);
 
-    const result = await save(formDataWithRanges());
+    const result = await save(formDataWithTargets());
 
     expect(result.status).toBe("success");
     expect(updateMock).toHaveBeenCalledWith({
-      calories_target: 1700,
-      protein_target: 120,
-      carbohydrates_target: 230,
-      fat_target: 70,
-      calories_min: 1500,
-      calories_max: 1700,
-      protein_min: 90,
-      protein_max: 120,
-      carbohydrates_min: 180,
-      carbohydrates_max: 230,
-      fat_min: 50,
-      fat_max: 70,
+      calories_target: 1600,
+      protein_target: 105,
+      carbohydrates_target: 205,
+      fat_target: 60,
     });
   });
 
-  it("rejects invalid ranges before touching Supabase", async () => {
+  it("rejects invalid targets before touching Supabase", async () => {
     const result = await save(
-      formDataWithRanges({
-        caloriesMin: "1800",
-        caloriesMax: "1500",
+      formDataWithTargets({
+        caloriesTarget: "nope",
       }),
     );
 
     expect(result.status).toBe("error");
     expect(result.message).toBe("Please fix the highlighted fields.");
-    expect(result.fieldErrors.caloriesMin).toBe(goalRangeOrderMessage);
+    expect(result.fieldErrors.caloriesTarget).toBe("Please enter a valid number.");
     expect(createServerSupabaseClientMock).not.toHaveBeenCalled();
   });
 
-  it("rejects unauthenticated saves without writing daily goals", async () => {
+  it("rejects unauthenticated saves without writing daily nutrition targets", async () => {
     const fromMock = vi.fn();
     createServerSupabaseClientMock.mockResolvedValue({
       auth: {
@@ -134,11 +119,11 @@ describe("saveDailyGoalRangesAction", () => {
       from: fromMock,
     });
 
-    const result = await save(formDataWithRanges());
+    const result = await save(formDataWithTargets());
 
     expect(result).toEqual({
       status: "error",
-      message: "You must be signed in to update daily goals.",
+      message: "You must be signed in to update daily nutrition targets.",
       fieldErrors: {},
     });
     expect(fromMock).not.toHaveBeenCalled();
@@ -149,7 +134,7 @@ describe("saveDailyGoalRangesAction", () => {
       code: "42703",
       details: null,
       hint: null,
-      message: "column daily_goals.calories_min does not exist",
+      message: "column daily_goals.fat_target does not exist",
     };
     const maybeSingleMock = vi
       .fn()
@@ -163,20 +148,20 @@ describe("saveDailyGoalRangesAction", () => {
     });
     createServerSupabaseClientMock.mockResolvedValue(supabase);
 
-    const result = await save(formDataWithRanges());
+    const result = await save(formDataWithTargets());
 
     expect(result.status).toBe("error");
     expect(result.message).toBe(
-      "Daily goal range columns are missing in Supabase. Apply the latest migration, then try again.",
+      "Daily nutrition target columns are missing in Supabase. Apply the latest migration, then try again.",
     );
     expect(console.error).toHaveBeenCalledWith(
-      "[settings:saveDailyGoalRanges] daily_goals.save failed",
+      "[settings:saveDailyNutritionTargets] daily_goals.save failed",
       {
         code: "42703",
         details: null,
         effectiveDate: "2026-07-19",
         hint: null,
-        message: "column daily_goals.calories_min does not exist",
+        message: "column daily_goals.fat_target does not exist",
         operation: "insert",
         userId: "user-1",
       },
@@ -184,28 +169,91 @@ describe("saveDailyGoalRangesAction", () => {
   });
 });
 
+describe("saveAppPreferencesAction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("saves app preferences for the authenticated user and revalidates dependent pages", async () => {
+    const updateMock = vi.fn(() => ({ error: null }));
+    const supabase = createSettingsSupabaseMock({
+      insertMock: vi.fn(),
+      maybeSingleMock: vi.fn(),
+      updateMock,
+      user: { id: "user-1" },
+    });
+    createServerSupabaseClientMock.mockResolvedValue(supabase);
+
+    const formData = new FormData();
+    formData.set("weekStartsOn", "sunday");
+    formData.set("timeFormat", "24h");
+
+    const result = await savePreferences(formData);
+
+    expect(result).toEqual({
+      status: "success",
+      message: "App preferences saved.",
+      fieldErrors: {},
+    });
+    expect(updateMock).toHaveBeenCalledWith({
+      week_starts_on: "sunday",
+      time_format: "24h",
+    });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/settings");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/today");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/history");
+  });
+
+  it("rejects invalid app preferences before touching Supabase", async () => {
+    const formData = new FormData();
+    formData.set("weekStartsOn", "friday");
+    formData.set("timeFormat", "24h");
+
+    const result = await savePreferences(formData);
+
+    expect(result.status).toBe("error");
+    expect(result.message).toBe("Please fix the highlighted fields.");
+    expect(result.fieldErrors.weekStartsOn).toBe(
+      "Choose whether weeks start on Sunday or Monday.",
+    );
+    expect(createServerSupabaseClientMock).not.toHaveBeenCalled();
+  });
+});
+
 async function save(formData: FormData) {
-  const { saveDailyGoalRangesAction } = await import("@/features/settings/actions");
-  const previousState: DailyGoalRangeActionState = {
+  const { saveDailyNutritionTargetsAction } = await import("@/features/settings/actions");
+  const previousState: DailyNutritionTargetActionState = {
     status: "idle",
     message: null,
     fieldErrors: {},
   };
 
-  return saveDailyGoalRangesAction(previousState, formData);
+  return saveDailyNutritionTargetsAction(previousState, formData);
 }
 
-function formDataWithRanges(overrides: Record<string, string> = {}) {
+async function savePreferences(formData: FormData) {
+  const { saveAppPreferencesAction } = await import("@/features/settings/actions");
+  const previousState: AppPreferenceActionState = {
+    status: "idle",
+    message: null,
+    fieldErrors: {},
+  };
+
+  return saveAppPreferencesAction(previousState, formData);
+}
+
+function formDataWithTargets(overrides: Record<string, string> = {}) {
   const formData = new FormData();
   const values = {
-    caloriesMin: "1500",
-    caloriesMax: "1700",
-    proteinMin: "90",
-    proteinMax: "120",
-    carbohydratesMin: "180",
-    carbohydratesMax: "230",
-    fatMin: "50",
-    fatMax: "70",
+    caloriesTarget: "1600",
+    proteinTarget: "105",
+    carbohydratesTarget: "205",
+    fatTarget: "60",
     ...overrides,
   };
 

@@ -40,7 +40,7 @@ type LogDayRow = Pick<
 >;
 type ProfileTimezoneRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
-  "timezone"
+  "timezone" | "time_format"
 >;
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
@@ -48,14 +48,6 @@ type GoalRow = Pick<
   | "protein_target"
   | "carbohydrates_target"
   | "fat_target"
-  | "calories_min"
-  | "calories_max"
-  | "protein_min"
-  | "protein_max"
-  | "carbohydrates_min"
-  | "carbohydrates_max"
-  | "fat_min"
-  | "fat_max"
 >;
 
 export async function getTodayDashboardData(): Promise<TodayDashboardData> {
@@ -80,20 +72,19 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
 
   const profileResult = await supabase
     .from("profiles")
-    .select("timezone")
+    .select("timezone, time_format")
     .eq("id", user.id)
     .maybeSingle();
 
   const profileRow = profileResult.data as ProfileTimezoneRow | null;
   const timezone = profileRow?.timezone ?? "UTC";
+  const timeFormat = profileRow?.time_format ?? "12h";
   const localDate = getLocalISODate(new Date(), timezone);
 
   const [goalResult, foodsResult, logsResult, logDaysResult] = await Promise.all([
     supabase
       .from("daily_goals")
-      .select(
-        "calories_target, protein_target, carbohydrates_target, fat_target, calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
-      )
+      .select("calories_target, protein_target, carbohydrates_target, fat_target")
       .eq("user_id", user.id)
       .lte("effective_date", localDate)
       .order("effective_date", { ascending: false })
@@ -164,7 +155,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
       carbohydrates: consumed.carbohydrates,
       fat: consumed.fat,
       loggedAt: log.logged_at,
-      time: formatTime(new Date(log.logged_at), timezone),
+      time: formatTime(new Date(log.logged_at), timezone, timeFormat),
       imageUrl: log.image_path_snapshot
         ? imageUrls.get(log.image_path_snapshot) ?? null
         : null,
@@ -209,14 +200,10 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
 
 function getNutritionTargetsFromGoal(goal: GoalRow): NutritionTargets {
   return {
-    caloriesMinTarget: goal.calories_min,
-    caloriesTarget: goal.calories_max,
-    proteinMinTarget: goal.protein_min,
-    proteinTarget: goal.protein_max,
-    carbohydratesMinTarget: goal.carbohydrates_min,
-    carbohydratesTarget: goal.carbohydrates_max,
-    fatMinTarget: goal.fat_min,
-    fatTarget: goal.fat_max,
+    caloriesTarget: goal.calories_target,
+    proteinTarget: goal.protein_target,
+    carbohydratesTarget: goal.carbohydrates_target,
+    fatTarget: goal.fat_target,
   };
 }
 

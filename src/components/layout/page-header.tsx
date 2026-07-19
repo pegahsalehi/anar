@@ -20,7 +20,9 @@ export function PageHeader({
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {eyebrow ? (
-          <p className={cn("text-sm font-medium text-coral", eyebrowClassName)}>{eyebrow}</p>
+          <p className={cn("text-sm font-medium text-muted-foreground", eyebrowClassName)}>
+            {eyebrow}
+          </p>
         ) : null}
         <h1 className="mt-1 text-2xl font-semibold leading-10 text-foreground sm:text-3xl">
           {title}

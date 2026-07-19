@@ -3,15 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
+  appPreferencesSchema,
   changePasswordSchema,
-  dailyGoalRangesSchema,
+  dailyNutritionTargetsSchema,
 } from "@/features/settings/schemas";
 import type {
+  AppPreferenceActionState,
+  AppPreferenceField,
   ChangePasswordActionState,
   ChangePasswordField,
-  DailyGoalRangeActionState,
-  DailyGoalRangeField,
-  DailyGoalRangeValues,
+  DailyNutritionTargetActionState,
+  DailyNutritionTargetField,
+  DailyNutritionTargetValues,
 } from "@/features/settings/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getLocalISODate } from "@/lib/dates";
@@ -19,6 +22,7 @@ import type { Database } from "@/types/database";
 
 type DailyGoalInsert = Database["public"]["Tables"]["daily_goals"]["Insert"];
 type DailyGoalUpdate = Database["public"]["Tables"]["daily_goals"]["Update"];
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 type SupabaseErrorLike = {
   code?: string;
   details?: string | null;
@@ -26,14 +30,14 @@ type SupabaseErrorLike = {
   message?: string;
 };
 
-export async function saveDailyGoalRangesAction(
-  _previousState: DailyGoalRangeActionState,
+export async function saveDailyNutritionTargetsAction(
+  _previousState: DailyNutritionTargetActionState,
   formData: FormData,
-): Promise<DailyGoalRangeActionState> {
-  const parsed = dailyGoalRangesSchema.safeParse(readFormData(formData));
+): Promise<DailyNutritionTargetActionState> {
+  const parsed = dailyNutritionTargetsSchema.safeParse(readFormData(formData));
 
   if (!parsed.success) {
-    return dailyGoalRangeValidationError(parsed.error);
+    return dailyNutritionTargetValidationError(parsed.error);
   }
 
   const supabase = await createServerSupabaseClient();
@@ -43,7 +47,7 @@ export async function saveDailyGoalRangesAction(
   } = await supabase.auth.getUser();
 
   if (authError) {
-    logSupabaseError("auth.getUser failed while saving daily goals", authError);
+    logSupabaseError("auth.getUser failed while saving daily nutrition targets", authError);
     return {
       status: "error",
       message: "Your session could not be verified. Please log in again.",
@@ -52,15 +56,15 @@ export async function saveDailyGoalRangesAction(
   }
 
   if (!user) {
-    console.warn("[settings:saveDailyGoalRanges] No authenticated user session was available.");
+    console.warn("[settings:saveDailyNutritionTargets] No authenticated user session was available.");
     return {
       status: "error",
-      message: "You must be signed in to update daily goals.",
+      message: "You must be signed in to update daily nutrition targets.",
       fieldErrors: {},
     };
   }
 
-  console.info("[settings:saveDailyGoalRanges] Authenticated user session confirmed.", {
+  console.info("[settings:saveDailyNutritionTargets] Authenticated user session confirmed.", {
     userId: user.id,
   });
 
@@ -71,7 +75,7 @@ export async function saveDailyGoalRangesAction(
     .maybeSingle();
 
   if (profileResult.error) {
-    logSupabaseError("profiles.select failed while saving daily goals", profileResult.error, {
+    logSupabaseError("profiles.select failed while saving daily nutrition targets", profileResult.error, {
       userId: user.id,
     });
     return {
@@ -92,7 +96,7 @@ export async function saveDailyGoalRangesAction(
     .maybeSingle();
 
   if (goalLookupResult.error) {
-    logSupabaseError("daily_goals.select failed before saving daily goals", goalLookupResult.error, {
+    logSupabaseError("daily_goals.select failed before saving daily nutrition targets", goalLookupResult.error, {
       effectiveDate,
       userId: user.id,
     });
@@ -134,25 +138,17 @@ export async function saveDailyGoalRangesAction(
 
   return {
     status: "success",
-    message: "Daily goal ranges saved.",
+    message: "Daily nutrition targets saved.",
     fieldErrors: {},
   };
 }
 
-function buildDailyGoalValues(values: DailyGoalRangeValues) {
+function buildDailyGoalValues(values: DailyNutritionTargetValues) {
   return {
-    calories_target: values.caloriesMax,
-    protein_target: values.proteinMax,
-    carbohydrates_target: values.carbohydratesMax,
-    fat_target: values.fatMax,
-    calories_min: values.caloriesMin,
-    calories_max: values.caloriesMax,
-    protein_min: values.proteinMin,
-    protein_max: values.proteinMax,
-    carbohydrates_min: values.carbohydratesMin,
-    carbohydrates_max: values.carbohydratesMax,
-    fat_min: values.fatMin,
-    fat_max: values.fatMax,
+    calories_target: values.caloriesTarget,
+    protein_target: values.proteinTarget,
+    carbohydrates_target: values.carbohydratesTarget,
+    fat_target: values.fatTarget,
   };
 }
 
@@ -213,6 +209,61 @@ export async function changePasswordAction(
   };
 }
 
+export async function saveAppPreferencesAction(
+  _previousState: AppPreferenceActionState,
+  formData: FormData,
+): Promise<AppPreferenceActionState> {
+  const parsed = appPreferencesSchema.safeParse(readFormData(formData));
+
+  if (!parsed.success) {
+    return appPreferenceValidationError(parsed.error);
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      status: "error",
+      message: "You must be signed in to update app preferences.",
+      fieldErrors: {},
+    };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      week_starts_on: parsed.data.weekStartsOn,
+      time_format: parsed.data.timeFormat,
+    } satisfies ProfileUpdate)
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[settings:saveAppPreferences] profiles.update failed", {
+      message: error.message ?? null,
+      userId: user.id,
+    });
+
+    return {
+      status: "error",
+      message: "App preferences could not be saved. Please try again.",
+      fieldErrors: {},
+    };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/today");
+  revalidatePath("/history");
+
+  return {
+    status: "success",
+    message: "App preferences saved.",
+    fieldErrors: {},
+  };
+}
+
 function readFormData(formData: FormData) {
   return Object.fromEntries(formData.entries());
 }
@@ -222,7 +273,7 @@ function logSupabaseError(
   error: SupabaseErrorLike,
   metadata: Record<string, string> = {},
 ) {
-  console.error(`[settings:saveDailyGoalRanges] ${context}`, {
+  console.error(`[settings:saveDailyNutritionTargets] ${context}`, {
     code: error.code ?? null,
     details: error.details ?? null,
     hint: error.hint ?? null,
@@ -236,31 +287,33 @@ function getDailyGoalSaveErrorMessage(error: SupabaseErrorLike) {
   const message = error.message?.toLowerCase() ?? "";
 
   if (code === "42703" || message.includes("does not exist")) {
-    return "Daily goal range columns are missing in Supabase. Apply the latest migration, then try again.";
+    return "Daily nutrition target columns are missing in Supabase. Apply the latest migration, then try again.";
   }
 
   if (code === "42501" || message.includes("permission denied")) {
-    return "You do not have permission to save daily goals for this account.";
+    return "You do not have permission to save daily nutrition targets for this account.";
   }
 
   if (code === "23514" || message.includes("check constraint")) {
-    return "Please enter non-negative goal ranges where each minimum is not greater than its maximum.";
+    return "Please enter non-negative daily nutrition targets.";
   }
 
   if (code === "23505" || message.includes("duplicate key")) {
-    return "A goal range already exists for this date. Refresh the page and try again.";
+    return "A daily nutrition target already exists for this date. Refresh the page and try again.";
   }
 
-  return "Daily goal ranges could not be saved because Supabase rejected the request. Check the server logs for details.";
+  return "Daily nutrition targets could not be saved because Supabase rejected the request. Check the server logs for details.";
 }
 
-function dailyGoalRangeValidationError(error: z.ZodError): DailyGoalRangeActionState {
-  const fieldErrors: DailyGoalRangeActionState["fieldErrors"] = {};
+function dailyNutritionTargetValidationError(
+  error: z.ZodError,
+): DailyNutritionTargetActionState {
+  const fieldErrors: DailyNutritionTargetActionState["fieldErrors"] = {};
 
   error.issues.forEach((issue) => {
     const field = issue.path[0];
 
-    if (isDailyGoalRangeField(field) && !fieldErrors[field]) {
+    if (isDailyNutritionTargetField(field) && !fieldErrors[field]) {
       fieldErrors[field] = issue.message;
     }
   });
@@ -290,16 +343,30 @@ function changePasswordValidationError(error: z.ZodError): ChangePasswordActionS
   };
 }
 
-function isDailyGoalRangeField(value: unknown): value is DailyGoalRangeField {
+function appPreferenceValidationError(error: z.ZodError): AppPreferenceActionState {
+  const fieldErrors: AppPreferenceActionState["fieldErrors"] = {};
+
+  error.issues.forEach((issue) => {
+    const field = issue.path[0];
+
+    if (isAppPreferenceField(field) && !fieldErrors[field]) {
+      fieldErrors[field] = issue.message;
+    }
+  });
+
+  return {
+    status: "error",
+    message: "Please fix the highlighted fields.",
+    fieldErrors,
+  };
+}
+
+function isDailyNutritionTargetField(value: unknown): value is DailyNutritionTargetField {
   return (
-    value === "caloriesMin" ||
-    value === "caloriesMax" ||
-    value === "proteinMin" ||
-    value === "proteinMax" ||
-    value === "carbohydratesMin" ||
-    value === "carbohydratesMax" ||
-    value === "fatMin" ||
-    value === "fatMax"
+    value === "caloriesTarget" ||
+    value === "proteinTarget" ||
+    value === "carbohydratesTarget" ||
+    value === "fatTarget"
   );
 }
 
@@ -309,6 +376,10 @@ function isChangePasswordField(value: unknown): value is ChangePasswordField {
     value === "newPassword" ||
     value === "confirmNewPassword"
   );
+}
+
+function isAppPreferenceField(value: unknown): value is AppPreferenceField {
+  return value === "weekStartsOn" || value === "timeFormat";
 }
 
 function translatePasswordError(message: string) {

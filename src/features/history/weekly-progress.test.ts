@@ -14,6 +14,15 @@ describe("weekly progress", () => {
     );
   });
 
+  it("normalizes requested weeks to Sunday when preferred", () => {
+    expect(resolveHistoryWeekStart("2026-07-19", "2026-07-19", "sunday")).toBe(
+      "2026-07-19",
+    );
+    expect(resolveHistoryWeekStart("not-a-date", "2026-07-20", "sunday")).toBe(
+      "2026-07-19",
+    );
+  });
+
   it("builds Monday-Sunday progress with zero days, targets, and totals", () => {
     const data = buildWeeklyProgressData({
       today: "2026-07-16",
@@ -25,14 +34,6 @@ describe("weekly progress", () => {
           protein_target: 100,
           carbohydrates_target: 250,
           fat_target: 70,
-          calories_min: 1800,
-          calories_max: 2000,
-          protein_min: 90,
-          protein_max: 100,
-          carbohydrates_min: 220,
-          carbohydrates_max: 250,
-          fat_min: 60,
-          fat_max: 70,
         },
         {
           effective_date: "2026-07-16",
@@ -40,14 +41,6 @@ describe("weekly progress", () => {
           protein_target: 120,
           carbohydrates_target: 220,
           fat_target: 65,
-          calories_min: 1600,
-          calories_max: 1800,
-          protein_min: 100,
-          protein_max: 120,
-          carbohydrates_min: 190,
-          carbohydrates_max: 220,
-          fat_min: 55,
-          fat_max: 65,
         },
       ],
       logs: [
@@ -70,7 +63,7 @@ describe("weekly progress", () => {
         {
           local_log_date: "2026-07-16",
           consumed_grams: 100,
-          calories_per_100g_snapshot: 1700,
+          calories_per_100g_snapshot: 1800,
           protein_per_100g_snapshot: 110,
           carbohydrates_per_100g_snapshot: 205,
           fat_per_100g_snapshot: 60,
@@ -102,19 +95,15 @@ describe("weekly progress", () => {
 
     expect(data.days[0].values.calories).toMatchObject({
       consumed: 0,
-      minTarget: 1800,
       target: 2000,
-      maxTarget: 2000,
       completionRatio: 0,
-      rangeStatus: "below",
+      targetStatus: "below",
     });
     expect(data.days[1].values.calories).toMatchObject({
       consumed: 200,
-      minTarget: 1800,
       target: 2000,
-      maxTarget: 2000,
       completionRatio: 0.1,
-      rangeStatus: "below",
+      targetStatus: "below",
     });
     expect(data.days[1].values.protein.consumed).toBe(9);
     expect(data.days[3]).toMatchObject({
@@ -122,8 +111,30 @@ describe("weekly progress", () => {
       isToday: true,
     });
     expect(data.days[3].values.calories.target).toBe(1800);
-    expect(data.days[3].values.calories.minTarget).toBe(1600);
-    expect(data.days[3].values.calories.rangeStatus).toBe("inside");
-    expect(data.days[4].values.calories.rangeStatus).toBe("above");
+    expect(data.days[3].values.calories.targetStatus).toBe("reached");
+    expect(data.days[4].values.calories.targetStatus).toBe("above");
+  });
+
+  it("builds Sunday-Saturday progress when requested", () => {
+    const data = buildWeeklyProgressData({
+      today: "2026-07-20",
+      weekStartsOn: "sunday",
+      weekStart: "2026-07-20",
+      goals: [],
+      logs: [],
+    });
+
+    expect(data.weekStartsOn).toBe("sunday");
+    expect(data.weekStart).toBe("2026-07-19");
+    expect(data.weekEnd).toBe("2026-07-25");
+    expect(data.days.map((day) => day.label)).toEqual([
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+    ]);
   });
 });

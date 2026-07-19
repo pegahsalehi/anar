@@ -1,3 +1,5 @@
+export type WeekStartsOn = "sunday" | "monday";
+
 export function getLocalISODate(date = new Date(), timeZone = "UTC") {
   const parts = new Intl.DateTimeFormat("en-CA", {
     day: "2-digit",
@@ -44,12 +46,21 @@ export function addISODays(value: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-export function startOfISOWeek(value: string) {
+export function startOfWeek(value: string, weekStartsOn: WeekStartsOn = "monday") {
   const date = new Date(`${value}T00:00:00.000Z`);
-  const mondayOffset = (date.getUTCDay() + 6) % 7;
-  return addISODays(value, -mondayOffset);
+  const day = date.getUTCDay();
+  const offset = weekStartsOn === "sunday" ? day : (day + 6) % 7;
+  return addISODays(value, -offset);
+}
+
+export function startOfISOWeek(value: string) {
+  return startOfWeek(value, "monday");
+}
+
+export function getWeekDays(weekStart: string) {
+  return Array.from({ length: 7 }, (_, index) => addISODays(weekStart, index));
 }
 
 export function getISOWeekDays(weekStart: string) {
-  return Array.from({ length: 7 }, (_, index) => addISODays(weekStart, index));
+  return getWeekDays(weekStart);
 }

@@ -74,8 +74,8 @@ export function AuthPageSeedDecorations() {
         aria-hidden="true"
         className="pointer-events-none absolute -bottom-10 -left-20 z-0 h-72 w-72 sm:-left-14 sm:bottom-6 lg:left-0 lg:bottom-8"
       >
-        <span className="absolute inset-8 rounded-full bg-[#DE2624]/[0.055] blur-3xl" />
-        <span className="absolute bottom-8 left-10 h-32 w-44 rotate-[-16deg] rounded-[999px] bg-[#DE2624]/[0.035] blur-2xl" />
+        <span className="absolute inset-8 rounded-full bg-soft-border/50 blur-3xl" />
+        <span className="absolute bottom-8 left-10 h-32 w-44 rotate-[-16deg] rounded-[999px] bg-soft-border/35 blur-2xl" />
         <SeedCluster seeds={loginPageSeeds} />
       </div>
     );
@@ -102,7 +102,7 @@ export function AuthCardSeedDecorations() {
       aria-hidden="true"
       className="pointer-events-none absolute -right-12 -top-12 z-0 h-40 w-44"
     >
-      <span className="absolute inset-4 rounded-full bg-[#DE2624]/[0.045] blur-2xl" />
+      <span className="absolute inset-4 rounded-full bg-soft-border/45 blur-2xl" />
       <SeedCluster seeds={loginCardSeeds} />
     </div>
   );
@@ -113,7 +113,7 @@ function SeedCluster({ seeds }: { seeds: SeedSpec[] }) {
     <>
       {seeds.map((seed, index) => (
         <span
-          className="absolute rounded-full bg-[#DE2624] shadow-[0_8px_20px_rgb(222_38_36_/_0.08)]"
+          className="absolute rounded-full bg-soft-border shadow-[0_8px_20px_rgb(226_231_228_/_0.14)]"
           key={`auth-seed-${index}`}
           style={{
             filter: seed.blur ? `blur(${seed.blur}px)` : undefined,
@@ -147,7 +147,7 @@ function LegacySeedPattern({
     >
       {legacySeedPatterns[variant].map((seedClassName, index) => (
         <span
-          className={cn("rotate-45 rounded-full bg-[#DE2624]", seedClassName)}
+          className={cn("rotate-45 rounded-full bg-soft-border", seedClassName)}
           key={`seed-${index}`}
         />
       ))}

@@ -1,8 +1,7 @@
-import { ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { LogoutButton } from "@/features/auth/components/logout-button";
-import { ChangePasswordForm } from "@/features/settings/components/change-password-form";
-import { DailyGoalRangesForm } from "@/features/settings/components/daily-goal-ranges-form";
+import { AppPreferencesForm } from "@/features/settings/components/app-preferences-form";
+import { DailyNutritionTargetsForm } from "@/features/settings/components/daily-nutrition-targets-form";
+import { SettingsAccordionCard } from "@/features/settings/components/settings-accordion-card";
 import { getSettingsPageData } from "@/features/settings/queries";
 
 export const metadata = {
@@ -16,7 +15,7 @@ export default async function SettingsPage() {
     <div className="space-y-7">
       <PageHeader
         title="Settings"
-        description="Manage nutrition ranges, password access, and privacy notes."
+        description="Manage nutrition targets, app preferences, and privacy."
       />
 
       {data.error ? (
@@ -29,34 +28,31 @@ export default async function SettingsPage() {
       ) : null}
 
       <div className="grid gap-5">
-        <DailyGoalRangesForm
+        <DailyNutritionTargetsForm
           effectiveDate={data.effectiveDate}
           initialValues={data.dailyGoals}
         />
-        <ChangePasswordForm />
+        <AppPreferencesForm initialValues={data.preferences} />
+        <SettingsAccordionCard
+          description="Learn how your data and nutrition totals are handled."
+          summary="User-entered nutrition values, account-scoped data, and no medical advice."
+          title="Privacy & nutrition information"
+        >
+          <div className="grid gap-3 text-sm leading-6 text-muted-foreground">
+            <p>
+              Nutrition values are entered by you. Anar calculates totals from
+              those user-entered values.
+            </p>
+            <p>
+              Your foods, logs, targets, and preferences are scoped to your
+              authenticated account.
+            </p>
+            <p>
+              Anar helps with tracking and does not provide medical advice.
+            </p>
+          </div>
+        </SettingsAccordionCard>
       </div>
-
-      <section className="rounded-md border border-border bg-card p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="flex gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-foreground">
-              <ShieldCheck aria-hidden="true" className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-card-foreground">
-                Privacy and health note
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Nutrition values are user-entered. Anar calculates totals and stores
-                owner-scoped rows; it does not provide medical advice.
-              </p>
-            </div>
-          </div>
-          <div className="shrink-0 md:pt-1">
-            <LogoutButton />
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

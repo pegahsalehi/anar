@@ -2,7 +2,8 @@ import { getLocalISODate } from "@/lib/dates";
 import { defaultDailyGoals } from "@/lib/nutrition";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
-  DailyGoalRangeValues,
+  AppPreferenceValues,
+  DailyNutritionTargetValues,
   SettingsPageData,
 } from "@/features/settings/types";
 import type { Database } from "@/types/database";
@@ -12,19 +13,15 @@ const settingsDataLoadError = "Settings data could not be loaded. Please try aga
 
 type ProfileTimezoneRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
-  "timezone"
+  "timezone" | "week_starts_on" | "time_format"
 >;
 
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
-  | "calories_min"
-  | "calories_max"
-  | "protein_min"
-  | "protein_max"
-  | "carbohydrates_min"
-  | "carbohydrates_max"
-  | "fat_min"
-  | "fat_max"
+  | "calories_target"
+  | "protein_target"
+  | "carbohydrates_target"
+  | "fat_target"
 >;
 
 export async function getSettingsPageData(): Promise<SettingsPageData> {
@@ -36,23 +33,25 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
 
   if (authError) {
     return {
-      dailyGoals: getDefaultDailyGoalRanges(),
+      dailyGoals: getDefaultDailyNutritionTargets(),
       effectiveDate: "",
+      preferences: getDefaultAppPreferences(),
       error: settingsDataLoadError,
     };
   }
 
   if (!user) {
     return {
-      dailyGoals: getDefaultDailyGoalRanges(),
+      dailyGoals: getDefaultDailyNutritionTargets(),
       effectiveDate: "",
+      preferences: getDefaultAppPreferences(),
       error: null,
     };
   }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("timezone")
+    .select("timezone, week_starts_on, time_format")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -60,9 +59,7 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   const localDate = getLocalISODate(new Date(), profileRow?.timezone ?? "UTC");
   const { data: goal, error: goalError } = await supabase
     .from("daily_goals")
-    .select(
-      "calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
-    )
+    .select("calories_target, protein_target, carbohydrates_target, fat_target")
     .eq("user_id", user.id)
     .lte("effective_date", localDate)
     .order("effective_date", { ascending: false })
@@ -70,36 +67,45 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
     .maybeSingle();
 
   return {
-    dailyGoals: goal ? getDailyGoalRanges(goal as GoalRow) : getDefaultDailyGoalRanges(),
+    dailyGoals: goal
+      ? getDailyNutritionTargets(goal as GoalRow)
+      : getDefaultDailyNutritionTargets(),
     effectiveDate: localDate,
+    preferences: getAppPreferences(profileRow),
     error: [profileError, goalError].some(isRealSupabaseRequestError)
       ? settingsDataLoadError
       : null,
   };
 }
 
-function getDailyGoalRanges(goal: GoalRow): DailyGoalRangeValues {
+function getDailyNutritionTargets(goal: GoalRow): DailyNutritionTargetValues {
   return {
-    caloriesMin: goal.calories_min,
-    caloriesMax: goal.calories_max,
-    proteinMin: goal.protein_min,
-    proteinMax: goal.protein_max,
-    carbohydratesMin: goal.carbohydrates_min,
-    carbohydratesMax: goal.carbohydrates_max,
-    fatMin: goal.fat_min,
-    fatMax: goal.fat_max,
+    caloriesTarget: goal.calories_target,
+    proteinTarget: goal.protein_target,
+    carbohydratesTarget: goal.carbohydrates_target,
+    fatTarget: goal.fat_target,
   };
 }
 
-function getDefaultDailyGoalRanges(): DailyGoalRangeValues {
+function getDefaultDailyNutritionTargets(): DailyNutritionTargetValues {
   return {
-    caloriesMin: defaultDailyGoals.caloriesMinTarget,
-    caloriesMax: defaultDailyGoals.caloriesTarget,
-    proteinMin: defaultDailyGoals.proteinMinTarget,
-    proteinMax: defaultDailyGoals.proteinTarget,
-    carbohydratesMin: defaultDailyGoals.carbohydratesMinTarget,
-    carbohydratesMax: defaultDailyGoals.carbohydratesTarget,
-    fatMin: defaultDailyGoals.fatMinTarget,
-    fatMax: defaultDailyGoals.fatTarget,
+    caloriesTarget: defaultDailyGoals.caloriesTarget,
+    proteinTarget: defaultDailyGoals.proteinTarget,
+    carbohydratesTarget: defaultDailyGoals.carbohydratesTarget,
+    fatTarget: defaultDailyGoals.fatTarget,
+  };
+}
+
+function getAppPreferences(profile: ProfileTimezoneRow | null): AppPreferenceValues {
+  return {
+    weekStartsOn: profile?.week_starts_on ?? "monday",
+    timeFormat: profile?.time_format ?? "12h",
+  };
+}
+
+function getDefaultAppPreferences(): AppPreferenceValues {
+  return {
+    weekStartsOn: "monday",
+    timeFormat: "12h",
   };
 }

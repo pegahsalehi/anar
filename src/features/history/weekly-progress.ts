@@ -1,8 +1,9 @@
 import {
   addISODays,
-  getISOWeekDays,
+  getWeekDays,
   isISODate,
-  startOfISOWeek,
+  startOfWeek,
+  type WeekStartsOn,
 } from "@/lib/dates";
 import {
   aggregateNutrition,
@@ -32,17 +33,9 @@ type WeeklyGoal = {
   protein_target: number;
   carbohydrates_target: number;
   fat_target: number;
-  calories_min: number;
-  calories_max: number;
-  protein_min: number;
-  protein_max: number;
-  carbohydrates_min: number;
-  carbohydrates_max: number;
-  fat_min: number;
-  fat_max: number;
 };
 
-const dayLabels: Array<Pick<WeeklyProgressDay, "shortLabel" | "label">> = [
+const mondayDayLabels: Array<Pick<WeeklyProgressDay, "shortLabel" | "label">> = [
   { shortLabel: "M", label: "Mon" },
   { shortLabel: "T", label: "Tue" },
   { shortLabel: "W", label: "Wed" },
@@ -52,23 +45,40 @@ const dayLabels: Array<Pick<WeeklyProgressDay, "shortLabel" | "label">> = [
   { shortLabel: "S", label: "Sun" },
 ];
 
-export function resolveHistoryWeekStart(value: string | null | undefined, today: string) {
-  return startOfISOWeek(isISODate(value) ? value : today);
+const sundayDayLabels: Array<Pick<WeeklyProgressDay, "shortLabel" | "label">> = [
+  { shortLabel: "S", label: "Sun" },
+  { shortLabel: "M", label: "Mon" },
+  { shortLabel: "T", label: "Tue" },
+  { shortLabel: "W", label: "Wed" },
+  { shortLabel: "T", label: "Thu" },
+  { shortLabel: "F", label: "Fri" },
+  { shortLabel: "S", label: "Sat" },
+];
+
+export function resolveHistoryWeekStart(
+  value: string | null | undefined,
+  today: string,
+  weekStartsOn: WeekStartsOn = "monday",
+) {
+  return startOfWeek(isISODate(value) ? value : today, weekStartsOn);
 }
 
 export function buildWeeklyProgressData({
   goals,
   logs,
   today,
+  weekStartsOn = "monday",
   weekStart,
 }: {
   goals: WeeklyGoal[];
   logs: WeeklyFoodLog[];
   today: string;
+  weekStartsOn?: WeekStartsOn;
   weekStart: string;
 }): WeeklyProgressData {
-  const normalizedWeekStart = startOfISOWeek(weekStart);
-  const weekDays = getISOWeekDays(normalizedWeekStart);
+  const normalizedWeekStart = startOfWeek(weekStart, weekStartsOn);
+  const weekDays = getWeekDays(normalizedWeekStart);
+  const dayLabels = weekStartsOn === "sunday" ? sundayDayLabels : mondayDayLabels;
   const totalsByDate = new Map<string, NutritionValues>();
   const sortedGoals = [...goals].sort((first, second) =>
     first.effective_date.localeCompare(second.effective_date),
@@ -94,6 +104,7 @@ export function buildWeeklyProgressData({
     weekEnd: weekDays[6],
     previousWeekStart: addISODays(normalizedWeekStart, -7),
     nextWeekStart: addISODays(normalizedWeekStart, 7),
+    weekStartsOn,
     days: weekDays.map((date, index) => {
       const totals = totalsByDate.get(date) ?? zeroNutritionValues();
       const targets = getTargetsForDate(sortedGoals, date);
@@ -105,22 +116,18 @@ export function buildWeeklyProgressData({
         values: {
           calories: buildMetricValue(
             totals.calories,
-            targets.caloriesMinTarget,
             targets.caloriesTarget,
           ),
           protein: buildMetricValue(
             totals.protein,
-            targets.proteinMinTarget,
             targets.proteinTarget,
           ),
           carbohydrates: buildMetricValue(
             totals.carbohydrates,
-            targets.carbohydratesMinTarget,
             targets.carbohydratesTarget,
           ),
           fat: buildMetricValue(
             totals.fat,
-            targets.fatMinTarget,
             targets.fatTarget,
           ),
         },
@@ -138,14 +145,10 @@ function getTargetsForDate(goals: WeeklyGoal[], date: string): NutritionTargets 
     }
 
     targets = {
-      caloriesMinTarget: goal.calories_min,
-      caloriesTarget: goal.calories_max,
-      proteinMinTarget: goal.protein_min,
-      proteinTarget: goal.protein_max,
-      carbohydratesMinTarget: goal.carbohydrates_min,
-      carbohydratesTarget: goal.carbohydrates_max,
-      fatMinTarget: goal.fat_min,
-      fatTarget: goal.fat_max,
+      caloriesTarget: goal.calories_target,
+      proteinTarget: goal.protein_target,
+      carbohydratesTarget: goal.carbohydrates_target,
+      fatTarget: goal.fat_target,
     };
   });
 
@@ -154,21 +157,17 @@ function getTargetsForDate(goals: WeeklyGoal[], date: string): NutritionTargets 
 
 function buildMetricValue(
   consumed: number,
-  minTarget: number,
-  maxTarget: number,
+  target: number,
 ): WeeklyProgressMetricValue {
-  const safeMinTarget = Math.max(minTarget, 0);
-  const safeMaxTarget = Math.max(maxTarget, safeMinTarget, 0);
-  const rangeStatus =
-    consumed < safeMinTarget ? "below" : consumed > safeMaxTarget ? "above" : "inside";
+  const safeTarget = Math.max(target, 0);
+  const targetStatus =
+    consumed < safeTarget ? "below" : consumed > safeTarget ? "above" : "reached";
 
   return {
     consumed,
-    minTarget: safeMinTarget,
-    target: safeMaxTarget,
-    maxTarget: safeMaxTarget,
-    completionRatio: safeMaxTarget > 0 ? consumed / safeMaxTarget : 0,
-    rangeStatus,
+    target: safeTarget,
+    completionRatio: safeTarget > 0 ? consumed / safeTarget : 0,
+    targetStatus,
   };
 }
 

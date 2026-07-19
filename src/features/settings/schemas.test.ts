@@ -1,65 +1,38 @@
 import { describe, expect, it } from "vitest";
 import {
+  appPreferencesSchema,
   changePasswordSchema,
-  dailyGoalRangesSchema,
+  dailyNutritionTargetsSchema,
 } from "@/features/settings/schemas";
 
 describe("settings schemas", () => {
-  it("accepts valid daily nutrition ranges", () => {
-    const result = dailyGoalRangesSchema.safeParse({
-      caloriesMin: "1500",
-      caloriesMax: "1700",
-      proteinMin: "90",
-      proteinMax: "120",
-      carbohydratesMin: "180",
-      carbohydratesMax: "230",
-      fatMin: "50",
-      fatMax: "70",
+  it("accepts valid daily nutrition targets", () => {
+    const result = dailyNutritionTargetsSchema.safeParse({
+      caloriesTarget: "1600",
+      proteinTarget: "105",
+      carbohydratesTarget: "205",
+      fatTarget: "60",
     });
 
     expect(result.success).toBe(true);
-    expect(result.success ? result.data.caloriesMin : null).toBe(1500);
+    expect(result.success ? result.data.caloriesTarget : null).toBe(1600);
   });
 
-  it("rejects invalid and negative ranges", () => {
-    const result = dailyGoalRangesSchema.safeParse({
-      caloriesMin: "nope",
-      caloriesMax: "1700",
-      proteinMin: "-1",
-      proteinMax: "120",
-      carbohydratesMin: "180",
-      carbohydratesMax: "230",
-      fatMin: "50",
-      fatMax: "70",
+  it("rejects invalid and negative targets", () => {
+    const result = dailyNutritionTargetsSchema.safeParse({
+      caloriesTarget: "nope",
+      proteinTarget: "-1",
+      carbohydratesTarget: "205",
+      fatTarget: "60",
     });
 
     expect(result.success).toBe(false);
     if (result.success) {
-      throw new Error("Expected settings ranges to fail validation.");
+      throw new Error("Expected settings targets to fail validation.");
     }
 
-    expect(result.error.issues.map((issue) => issue.path[0])).toContain("caloriesMin");
-    expect(result.error.issues.map((issue) => issue.path[0])).toContain("proteinMin");
-  });
-
-  it("rejects unordered ranges", () => {
-    const result = dailyGoalRangesSchema.safeParse({
-      caloriesMin: "1500",
-      caloriesMax: "1700",
-      proteinMin: "90",
-      proteinMax: "120",
-      carbohydratesMin: "240",
-      carbohydratesMax: "230",
-      fatMin: "50",
-      fatMax: "70",
-    });
-
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error("Expected settings ranges to fail validation.");
-    }
-
-    expect(result.error.issues.map((issue) => issue.path[0])).toContain("carbohydratesMin");
+    expect(result.error.issues.map((issue) => issue.path[0])).toContain("caloriesTarget");
+    expect(result.error.issues.map((issue) => issue.path[0])).toContain("proteinTarget");
   });
 
   it("validates password strength and confirmation", () => {
@@ -86,5 +59,21 @@ describe("settings schemas", () => {
         confirmNewPassword: "newpassword1",
       }).success,
     ).toBe(true);
+  });
+
+  it("validates persisted app preferences", () => {
+    expect(
+      appPreferencesSchema.safeParse({
+        weekStartsOn: "monday",
+        timeFormat: "24h",
+      }).success,
+    ).toBe(true);
+
+    expect(
+      appPreferencesSchema.safeParse({
+        weekStartsOn: "friday",
+        timeFormat: "military",
+      }).success,
+    ).toBe(false);
   });
 });

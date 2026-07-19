@@ -2,7 +2,7 @@ import type { FoodLogListItem } from "@/components/nutrition/food-log-item";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSignedImageUrlMap } from "@/lib/storage/food-images";
 import { formatTime } from "@/lib/format";
-import { addISODays, getLocalISODate } from "@/lib/dates";
+import { addISODays, getLocalISODate, type WeekStartsOn } from "@/lib/dates";
 import {
   aggregateNutrition,
   calculateConsumedNutrition,
@@ -22,7 +22,7 @@ type FoodLogRow = Database["public"]["Tables"]["food_logs"]["Row"];
 type LogDayRow = Pick<FoodLogRow, "local_log_date">;
 type ProfileTimezoneRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
-  "timezone"
+  "timezone" | "week_starts_on" | "time_format"
 >;
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
@@ -30,14 +30,6 @@ type GoalRow = Pick<
   | "protein_target"
   | "carbohydrates_target"
   | "fat_target"
-  | "calories_min"
-  | "calories_max"
-  | "protein_min"
-  | "protein_max"
-  | "carbohydrates_min"
-  | "carbohydrates_max"
-  | "fat_min"
-  | "fat_max"
 >;
 type WeeklyGoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
@@ -46,14 +38,6 @@ type WeeklyGoalRow = Pick<
   | "protein_target"
   | "carbohydrates_target"
   | "fat_target"
-  | "calories_min"
-  | "calories_max"
-  | "protein_min"
-  | "protein_max"
-  | "carbohydrates_min"
-  | "carbohydrates_max"
-  | "fat_min"
-  | "fat_max"
 >;
 type WeeklyFoodLogRow = Pick<
   FoodLogRow,
@@ -67,6 +51,7 @@ type WeeklyFoodLogRow = Pick<
 
 type HistoryDateData = {
   activeDates: string[];
+  weekStartsOn: WeekStartsOn;
   streak: LogDayStats;
   logs: FoodLogListItem[];
   progress: DailyNutritionProgress;
@@ -98,14 +83,15 @@ export async function getHistoryActiveDates(
 
   const profileResult = await supabase
     .from("profiles")
-    .select("timezone")
+    .select("timezone, week_starts_on, time_format")
     .eq("id", user.id)
     .maybeSingle();
 
   const profile = profileResult.data as ProfileTimezoneRow | null;
   const timezone = profile?.timezone ?? "UTC";
+  const weekStartsOn = profile?.week_starts_on ?? "monday";
   const today = getLocalISODate(new Date(), timezone);
-  const resolvedWeekStart = resolveHistoryWeekStart(weekStart, today);
+  const resolvedWeekStart = resolveHistoryWeekStart(weekStart, today, weekStartsOn);
   const weekEnd = addISODays(resolvedWeekStart, 6);
 
   const [activeDatesResult, weeklyLogsResult, weeklyGoalsResult] = await Promise.all([
@@ -125,9 +111,7 @@ export async function getHistoryActiveDates(
       .lte("local_log_date", weekEnd),
     supabase
       .from("daily_goals")
-      .select(
-        "effective_date, calories_target, protein_target, carbohydrates_target, fat_target, calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
-      )
+      .select("effective_date, calories_target, protein_target, carbohydrates_target, fat_target")
       .eq("user_id", user.id)
       .lte("effective_date", weekEnd)
       .order("effective_date", { ascending: true }),
@@ -141,6 +125,7 @@ export async function getHistoryActiveDates(
       goals: (weeklyGoalsResult.data ?? []) as WeeklyGoalRow[],
       logs: (weeklyLogsResult.data ?? []) as WeeklyFoodLogRow[],
       today,
+      weekStartsOn,
       weekStart: resolvedWeekStart,
     }),
     streak: calculateLogDayStats(
@@ -173,7 +158,11 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   }
 
   const [profileResult, activeDatesResult, goalResult, logsResult] = await Promise.all([
-    supabase.from("profiles").select("timezone").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("timezone, week_starts_on, time_format")
+      .eq("id", user.id)
+      .maybeSingle(),
     supabase
       .from("food_logs")
       .select("local_log_date")
@@ -182,9 +171,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
       .limit(500),
     supabase
       .from("daily_goals")
-      .select(
-        "calories_target, protein_target, carbohydrates_target, fat_target, calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
-      )
+      .select("calories_target, protein_target, carbohydrates_target, fat_target")
       .eq("user_id", user.id)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false })
@@ -201,6 +188,8 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   const profile = profileResult.data as ProfileTimezoneRow | null;
   const goal = goalResult.data as GoalRow | null;
   const timezone = profile?.timezone ?? "UTC";
+  const timeFormat = profile?.time_format ?? "12h";
+  const weekStartsOn = profile?.week_starts_on ?? "monday";
   const activeDates = getUniqueActiveDates(activeDatesResult.data);
   const imageUrls = await createSignedImageUrlMap(
     supabase,
@@ -227,7 +216,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
         protein: consumed.protein,
         carbohydrates: consumed.carbohydrates,
         fat: consumed.fat,
-        time: formatTime(new Date(log.logged_at), timezone),
+        time: formatTime(new Date(log.logged_at), timezone, timeFormat),
         imageUrl: log.image_path_snapshot
           ? imageUrls.get(log.image_path_snapshot) ?? null
           : null,
@@ -243,19 +232,16 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   );
   const goals = goal
     ? {
-        caloriesMinTarget: goal.calories_min,
-        caloriesTarget: goal.calories_max,
-        proteinMinTarget: goal.protein_min,
-        proteinTarget: goal.protein_max,
-        carbohydratesMinTarget: goal.carbohydrates_min,
-        carbohydratesTarget: goal.carbohydrates_max,
-        fatMinTarget: goal.fat_min,
-        fatTarget: goal.fat_max,
+        caloriesTarget: goal.calories_target,
+        proteinTarget: goal.protein_target,
+        carbohydratesTarget: goal.carbohydrates_target,
+        fatTarget: goal.fat_target,
       }
     : defaultDailyGoals;
 
   return {
     activeDates,
+    weekStartsOn,
     streak: calculateLogDayStats(activeDates, getLocalISODate(new Date(), timezone)),
     logs,
     progress: progressFromTotals(totals, goals),
@@ -288,6 +274,7 @@ function buildEmptyHistoryDateData(): HistoryDateData {
 
   return {
     activeDates: [],
+    weekStartsOn: "monday",
     streak: calculateLogDayStats([], today),
     logs: [],
     progress: progressFromTotals(

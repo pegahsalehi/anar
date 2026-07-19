@@ -8,6 +8,7 @@ import {
   formatInteger,
   formatPercent,
 } from "@/lib/format";
+import { nutrientPalette } from "@/components/nutrition/nutrient-theme";
 
 type NutritionKind = "calories" | "protein" | "carbohydrates" | "fat";
 
@@ -15,7 +16,6 @@ type NutritionProgressCardProps = {
   kind: NutritionKind;
   label: string;
   consumed: number;
-  minTarget: number;
   target: number;
   unit: "calorie" | "gram";
 };
@@ -34,47 +34,47 @@ type CardTheme = {
 
 const cardThemes: Record<NutritionKind, CardTheme> = {
   calories: {
-    accent: "#FF1744",
-    bar: "#FF1744",
+    accent: nutrientPalette.calories.color,
+    bar: nutrientPalette.calories.color,
     border: "rgb(232 237 233 / 1)",
     descriptor: "Energy",
     glow: "rgb(255 23 68 / 0.11)",
     icon: Flame,
     surface: "#FFFFFF",
-    title: "#FF1744",
+    title: nutrientPalette.calories.color,
     track: "#EEF1EE",
   },
   protein: {
-    accent: "#7C4DFF",
-    bar: "#7C4DFF",
+    accent: nutrientPalette.protein.color,
+    bar: nutrientPalette.protein.color,
     border: "rgb(232 237 233 / 1)",
     descriptor: "Muscle Growth",
     glow: "rgb(124 77 255 / 0.11)",
     icon: Drumstick,
     surface: "#FFFFFF",
-    title: "#7C4DFF",
+    title: nutrientPalette.protein.color,
     track: "#EEF1EE",
   },
   carbohydrates: {
-    accent: "#00D8FF",
-    bar: "#00D8FF",
+    accent: nutrientPalette.carbs.color,
+    bar: nutrientPalette.carbs.color,
     border: "rgb(232 237 233 / 1)",
     descriptor: "Body Fuel",
     glow: "rgb(0 216 255 / 0.11)",
     icon: Wheat,
     surface: "#FFFFFF",
-    title: "#00D8FF",
+    title: nutrientPalette.carbs.color,
     track: "#EEF1EE",
   },
   fat: {
-    accent: "#FF9100",
-    bar: "#FF9100",
+    accent: nutrientPalette.fat.color,
+    bar: nutrientPalette.fat.color,
     border: "rgb(232 237 233 / 1)",
     descriptor: "Vitamin Absorption",
     glow: "rgb(255 145 0 / 0.11)",
     icon: Droplet,
     surface: "#FFFFFF",
-    title: "#FF9100",
+    title: nutrientPalette.fat.color,
     track: "#EEF1EE",
   },
 };
@@ -83,28 +83,23 @@ export function NutritionProgressCard({
   kind,
   label,
   consumed,
-  minTarget,
   target,
   unit,
 }: NutritionProgressCardProps) {
   const percentage = target > 0 ? consumed / target : 0;
   const boundedPercentage = Math.min(Math.max(percentage, 0), 1);
   const remaining = Math.max(target - consumed, 0);
-  const remainingToMin = Math.max(minTarget - consumed, 0);
   const exceeded = consumed > target ? consumed - target : 0;
-  const isRange = minTarget !== target;
   const theme = cardThemes[kind];
   const Icon = theme.icon;
   const formatValue = unit === "calorie" ? formatCalories : formatGram;
   const value = unit === "calorie" ? formatInteger(Math.round(consumed)) : formatDecimal(consumed);
   const valueUnit = unit === "calorie" ? "cal" : "g";
-  const targetLabel = formatTargetRange(minTarget, target, formatValue);
+  const targetLabel = formatValue(target);
   const statusLabel = getStatusLabel({
     exceeded,
     formatValue,
-    isRange,
     remaining,
-    remainingToMin,
   });
   const cardStyle = {
     "--metric-accent": theme.accent,
@@ -142,16 +137,16 @@ export function NutritionProgressCard({
         </span>
 
         <div className="mt-auto">
-          <div className="flex items-end justify-between gap-2">
+          <div className="space-y-2">
             <div className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap">
-              <p className="text-[2.05rem] font-semibold leading-[0.85] text-foreground sm:text-[2.35rem] min-[1500px]:text-[2.6rem]">
+              <p className="text-[1.65rem] font-semibold leading-[0.9] text-foreground sm:text-[1.85rem] min-[1500px]:text-[2.05rem]">
                 {value}
               </p>
               <p className="text-sm font-medium leading-none text-foreground sm:text-base">
                 {valueUnit}
               </p>
             </div>
-            <p className="mb-1 shrink-0 whitespace-nowrap text-right text-xs font-medium leading-none text-muted-foreground sm:text-sm">
+            <p className="whitespace-nowrap text-xs font-medium leading-none text-muted-foreground sm:text-sm">
               Goal <span className="font-semibold text-foreground">{targetLabel}</span>
             </p>
           </div>
@@ -176,39 +171,17 @@ export function NutritionProgressCard({
   );
 }
 
-function formatTargetRange(
-  minTarget: number,
-  maxTarget: number,
-  formatValue: (value: number) => string,
-) {
-  return minTarget === maxTarget
-    ? formatValue(maxTarget)
-    : `${formatValue(minTarget)}-${formatValue(maxTarget)}`;
-}
-
 function getStatusLabel({
   exceeded,
   formatValue,
-  isRange,
   remaining,
-  remainingToMin,
 }: {
   exceeded: number;
   formatValue: (value: number) => string;
-  isRange: boolean;
   remaining: number;
-  remainingToMin: number;
 }) {
   if (exceeded > 0) {
-    return `${formatValue(exceeded)} over range`;
-  }
-
-  if (isRange && remainingToMin > 0) {
-    return `${formatValue(remainingToMin)} to minimum`;
-  }
-
-  if (isRange) {
-    return "Within goal range";
+    return `${formatValue(exceeded)} over target`;
   }
 
   return `${formatValue(remaining)} remaining`;

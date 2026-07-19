@@ -4,6 +4,7 @@ import {
   deleteFoodLogAction,
   updateFoodLogGramsAction,
 } from "@/features/today/actions";
+import { NutrientChip } from "@/components/nutrition/nutrient-theme";
 import { formatCalories, formatDecimal, formatGram } from "@/lib/format";
 
 export type FoodLogListItem = {
@@ -41,22 +42,26 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
         </div>
       </div>
       <dl className="grid grid-cols-2 gap-2 text-center text-xs sm:w-96 sm:grid-cols-4">
-        <div className="rounded-md bg-muted px-2 py-2">
-          <dt className="text-muted-foreground">Calories</dt>
-          <dd className="mt-1 font-medium">{formatCalories(log.calories)}</dd>
-        </div>
-        <div className="rounded-md bg-muted px-2 py-2">
-          <dt className="text-muted-foreground">Protein</dt>
-          <dd className="mt-1 font-medium">{formatDecimal(log.protein)} g</dd>
-        </div>
-        <div className="rounded-md bg-muted px-2 py-2">
-          <dt className="text-muted-foreground">Carbs</dt>
-          <dd className="mt-1 font-medium">{formatDecimal(log.carbohydrates)} g</dd>
-        </div>
-        <div className="rounded-md bg-muted px-2 py-2">
-          <dt className="text-muted-foreground">Fat</dt>
-          <dd className="mt-1 font-medium">{formatDecimal(log.fat)} g</dd>
-        </div>
+        <NutrientChip
+          className="text-center"
+          value={formatCalories(log.calories)}
+          variant="calories"
+        />
+        <NutrientChip
+          className="text-center"
+          value={`${formatDecimal(log.protein)} g`}
+          variant="protein"
+        />
+        <NutrientChip
+          className="text-center"
+          value={`${formatDecimal(log.carbohydrates)} g`}
+          variant="carbs"
+        />
+        <NutrientChip
+          className="text-center"
+          value={`${formatDecimal(log.fat)} g`}
+          variant="fat"
+        />
       </dl>
       {editable ? (
         <div className="flex gap-2 self-end sm:self-auto">

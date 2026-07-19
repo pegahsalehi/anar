@@ -26,7 +26,7 @@ export default async function HistoryDatePage({ params }: HistoryDatePageProps) 
         eyebrow={date}
         eyebrowClassName="text-[#45B385]"
         title="Day details"
-        description="Compare the selected day's goals and logged food snapshots."
+        description="Compare the selected day's targets and logged food snapshots."
       />
       {data.error ? (
         <p className="rounded-md border border-coral/25 bg-coral/10 px-4 py-3 text-sm text-coral" role="alert">
@@ -35,7 +35,11 @@ export default async function HistoryDatePage({ params }: HistoryDatePageProps) 
       ) : null}
       <StreakCard {...data.streak} />
       <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
-        <CalendarPreview activeDates={data.activeDates} selectedDate={date} />
+        <CalendarPreview
+          activeDates={data.activeDates}
+          selectedDate={date}
+          weekStartsOn={data.weekStartsOn}
+        />
         <div className="space-y-5">
           <DailySummary compact progress={data.progress} />
           <section className="space-y-3">

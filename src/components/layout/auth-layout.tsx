@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChartNoAxesColumnIncreasing, ShieldCheck, Timer } from "lucide-react";
-import { AnarLogo } from "@/components/brand/anar-logo";
+import { AuthBrandLogo } from "@/components/layout/auth-brand-logo";
 
 const benefits: Array<{ title: string; icon: LucideIcon }> = [
   {
@@ -51,7 +51,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             className="relative mx-auto w-full max-w-md overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-6 shadow-[0_24px_70px_rgb(18_53_42_/_0.12)] sm:p-8"
           >
             <div className="relative z-10">
-              <AnarLogo className="mb-8 w-full" href="/login" variant="auth" />
+              <AuthBrandLogo />
               {children}
             </div>
           </section>

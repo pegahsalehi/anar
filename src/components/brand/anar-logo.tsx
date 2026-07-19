@@ -9,24 +9,35 @@ type AnarLogoProps = {
   compact?: boolean;
   decorative?: boolean;
   href?: string | null;
+  imageClassName?: string;
+  imageSizes?: string;
   variant?: AnarLogoVariant;
 };
 
-const logoDimensions = {
+const logoAssets = {
   nav: {
-    wrapper: "h-12 w-10",
-    imageSizes: "48px",
-    wordmark: "text-xl",
+    className: "h-auto w-[128px] max-w-full sm:w-[138px]",
+    height: 1023,
+    priority: true,
+    sizes: "145px",
+    src: "/brand/anar-logo.png",
+    width: 2456,
   },
   compact: {
-    wrapper: "h-10 w-8",
-    imageSizes: "40px",
-    wordmark: "text-lg",
+    className: "h-10 w-10",
+    height: 1023,
+    priority: false,
+    sizes: "40px",
+    src: "/brand/anar-icon.png",
+    width: 1023,
   },
   auth: {
-    wrapper: "h-24 w-20",
-    imageSizes: "90px",
-    wordmark: "text-2xl",
+    className: "h-auto w-[160px] max-w-full sm:w-[190px] md:w-[210px]",
+    height: 1697,
+    priority: true,
+    sizes: "(min-width: 768px) 210px, (min-width: 640px) 190px, 160px",
+    src: "/brand/anar-icon-login.png",
+    width: 1429,
   },
 };
 
@@ -35,40 +46,28 @@ export function AnarLogo({
   compact = false,
   decorative = false,
   href = "/today",
+  imageClassName,
+  imageSizes,
   variant,
 }: AnarLogoProps) {
   const resolvedVariant = variant ?? (compact ? "compact" : "nav");
   const isAuth = resolvedVariant === "auth";
-  const shouldShowWordmark = resolvedVariant !== "compact";
-  const dimensions = logoDimensions[resolvedVariant];
+  const asset = logoAssets[resolvedVariant];
   const content = (
-    <>
-      <span className={cn("relative shrink-0", dimensions.wrapper)}>
-        <Image
-          alt={decorative ? "" : "Anar logo"}
-          className="object-contain"
-          fill
-          priority={resolvedVariant !== "compact"}
-          sizes={dimensions.imageSizes}
-          src="/brand/anar-logo.png"
-        />
-      </span>
-      {shouldShowWordmark ? (
-        <span
-          className={cn(
-            "font-semibold leading-none text-primary-foreground",
-            dimensions.wordmark,
-          )}
-        >
-          Anar
-        </span>
-      ) : null}
-    </>
+    <Image
+      alt={decorative ? "" : "Anar"}
+      className={cn("block object-contain", asset.className, imageClassName)}
+      height={asset.height}
+      priority={asset.priority}
+      sizes={imageSizes ?? asset.sizes}
+      src={asset.src}
+      width={asset.width}
+    />
   );
 
   const classes = cn(
-    "inline-flex items-center gap-3",
-    isAuth && "flex-col justify-center gap-3 text-center",
+    "inline-flex min-w-0 items-center",
+    isAuth && "w-full justify-center",
     className,
   );
 

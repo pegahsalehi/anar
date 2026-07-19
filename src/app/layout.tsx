@@ -14,20 +14,27 @@ export const metadata: Metadata = {
     default: "Anar - Personal Nutrition Tracker",
     template: "%s | Anar",
   },
-  description: "Track foods, daily nutrition goals, and healthy habits with Anar.",
+  description: "Track foods, daily nutrition targets, and healthy habits with Anar.",
   applicationName: "Anar",
   icons: {
     icon: [
       {
-        url: "/favicon.png",
-        sizes: "512x512",
+        url: "/brand/anar-icon.png?v=20260720",
+        sizes: "1023x1023",
+        type: "image/png",
+      },
+    ],
+    shortcut: [
+      {
+        url: "/brand/anar-icon.png?v=20260720",
+        sizes: "1023x1023",
         type: "image/png",
       },
     ],
     apple: [
       {
-        url: "/icon.png",
-        sizes: "512x512",
+        url: "/brand/anar-icon.png?v=20260720",
+        sizes: "1023x1023",
         type: "image/png",
       },
     ],

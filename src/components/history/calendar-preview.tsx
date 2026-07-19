@@ -1,15 +1,21 @@
 import { cn } from "@/lib/utils";
+import type { WeekStartsOn } from "@/lib/dates";
 
 type CalendarPreviewProps = {
   selectedDate?: string;
   activeDates?: string[];
+  weekStartsOn?: WeekStartsOn;
 };
 
-const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const weekDaysByStart: Record<WeekStartsOn, string[]> = {
+  sunday: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  monday: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+};
 
 export function CalendarPreview({
   selectedDate,
   activeDates = [],
+  weekStartsOn = "monday",
 }: CalendarPreviewProps) {
   const selected = selectedDate ? new Date(`${selectedDate}T00:00:00`) : new Date();
   const year = selected.getFullYear();
@@ -20,10 +26,11 @@ export function CalendarPreview({
   }).format(selected);
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const leadingDays = firstDay.getDay();
+  const leadingDays = getLeadingDays(firstDay, weekStartsOn);
   const totalCells = Math.ceil((leadingDays + daysInMonth) / 7) * 7;
   const activeDateSet = new Set(activeDates);
   const today = toLocalISODate(new Date());
+  const weekDays = weekDaysByStart[weekStartsOn];
 
   return (
     <section className="rounded-md border border-border bg-card p-5 shadow-sm">
@@ -49,12 +56,12 @@ export function CalendarPreview({
             <div
               aria-label={isDisabled ? undefined : `${monthLabel} ${day}`}
               className={cn(
-                "flex aspect-square items-center justify-center rounded-md border border-transparent text-sm font-semibold",
+                "flex aspect-square items-center justify-center rounded-md border border-transparent text-sm font-semibold transition",
                 isDisabled && "bg-transparent text-muted-foreground/35",
-                !isDisabled && "bg-muted text-foreground",
-                hasLog && "bg-primary/15 text-foreground",
+                !isDisabled && "bg-surface-muted text-foreground hover:bg-surface-soft",
+                hasLog && "bg-primary/15 text-foreground hover:bg-primary/20",
                 isToday && "border-primary",
-                isSelected && "bg-primary text-primary-foreground",
+                isSelected && "bg-primary text-primary-foreground hover:bg-primary",
               )}
               key={`${index}-${day}`}
             >
@@ -82,4 +89,9 @@ function toLocalISODate(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function getLeadingDays(date: Date, weekStartsOn: WeekStartsOn) {
+  const day = date.getDay();
+  return weekStartsOn === "sunday" ? day : (day + 6) % 7;
 }

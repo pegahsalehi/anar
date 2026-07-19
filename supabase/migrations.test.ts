@@ -38,21 +38,30 @@ const duplicateFoodNameMigration = fs.readFileSync(
   ),
   "utf8",
 );
-const dailyGoalRangesMigration = fs.readFileSync(
+const singleDailyNutritionTargetsMigration = fs.readFileSync(
   path.join(
     process.cwd(),
     "supabase",
     "migrations",
-    "20260719152000_add_daily_goal_ranges.sql",
+    "20260719203000_use_single_daily_nutrition_targets.sql",
   ),
   "utf8",
 );
-const dailyGoalRangesRepairMigration = fs.readFileSync(
+const profilePreferencesMigration = fs.readFileSync(
   path.join(
     process.cwd(),
     "supabase",
     "migrations",
-    "20260719195500_repair_daily_goal_ranges_save_contract.sql",
+    "20260720110000_add_profile_identity_and_preferences.sql",
+  ),
+  "utf8",
+);
+const imageAvatarIdsMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260720123000_use_image_avatar_ids.sql",
   ),
   "utf8",
 );
@@ -92,16 +101,10 @@ describe("Supabase migrations", () => {
     expect(duplicateFoodNameMigration).not.toMatch(
       /grant\s+.+\s+on\s+table\s+public\.foods\s+to\s+anon/i,
     );
-    expect(dailyGoalRangesMigration).toContain(
+    expect(singleDailyNutritionTargetsMigration).toContain(
       "grant select, insert, update on table public.daily_goals to authenticated;",
     );
-    expect(dailyGoalRangesMigration).not.toMatch(
-      /grant\s+.+\s+on\s+table\s+public\.daily_goals\s+to\s+anon/i,
-    );
-    expect(dailyGoalRangesRepairMigration).toContain(
-      "grant select, insert, update on table public.daily_goals to authenticated;",
-    );
-    expect(dailyGoalRangesRepairMigration).not.toMatch(
+    expect(singleDailyNutritionTargetsMigration).not.toMatch(
       /grant\s+.+\s+on\s+table\s+public\.daily_goals\s+to\s+anon/i,
     );
   });
@@ -136,44 +139,55 @@ describe("Supabase migrations", () => {
     expect(duplicateFoodNameMigration).toContain("where deleted_at is null");
   });
 
-  it("adds daily goal ranges with nonnegative and ordered constraints", () => {
-    expect(dailyGoalRangesMigration).toContain("add column if not exists calories_min");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists calories_max");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists protein_min");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists protein_max");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists carbohydrates_min");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists carbohydrates_max");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists fat_min");
-    expect(dailyGoalRangesMigration).toContain("add column if not exists fat_max");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_calories_range");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_protein_range");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_carbohydrates_range");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_fat_range");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_calories_range_order");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_protein_range_order");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_carbohydrates_range_order");
-    expect(dailyGoalRangesMigration).toContain("daily_goals_fat_range_order");
-  });
-
-  it("repairs the daily goal save contract without weakening ownership", () => {
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists calories_min");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists calories_max");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists protein_min");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists protein_max");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists carbohydrates_min");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists carbohydrates_max");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists fat_min");
-    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists fat_max");
-    expect(dailyGoalRangesRepairMigration).toContain(
-      "add constraint daily_goals_user_effective_date_unique unique (user_id, effective_date)",
+  it("converts legacy daily nutrition data to targets without weakening ownership", () => {
+    expect(singleDailyNutritionTargetsMigration).toContain(
+      "calories_target = (greatest(coalesce(calories_min, calories_target, 0), 0) + greatest(coalesce(calories_max, calories_target, 0), 0)) / 2",
     );
-    expect(dailyGoalRangesRepairMigration).toContain(
+    expect(singleDailyNutritionTargetsMigration).toContain(
+      "drop column if exists calories_min",
+    );
+    expect(singleDailyNutritionTargetsMigration).toContain(
+      "drop column if exists fat_max",
+    );
+    expect(singleDailyNutritionTargetsMigration).toContain(
+      "daily_goals_nonnegative_calories_target",
+    );
+    expect(singleDailyNutritionTargetsMigration).toContain(
       "alter table public.daily_goals enable row level security;",
     );
-    expect(dailyGoalRangesRepairMigration).toContain("using (auth.uid() = user_id)");
-    expect(dailyGoalRangesRepairMigration).toContain("with check (auth.uid() = user_id)");
-    expect(dailyGoalRangesRepairMigration).toContain(
+    expect(singleDailyNutritionTargetsMigration).toContain(
       "grant select, insert, update on table public.daily_goals to authenticated;",
+    );
+  });
+
+  it("adds profile identity and preference fields with safe defaults", () => {
+    expect(profilePreferencesMigration).toContain(
+      "add column if not exists avatar_id text not null default 'pomegranate'",
+    );
+    expect(profilePreferencesMigration).toContain(
+      "add column if not exists week_starts_on text not null default 'monday'",
+    );
+    expect(profilePreferencesMigration).toContain(
+      "add column if not exists time_format text not null default '12h'",
+    );
+    expect(profilePreferencesMigration).toContain("profiles_avatar_id_check");
+    expect(profilePreferencesMigration).toContain("profiles_week_starts_on_check");
+    expect(profilePreferencesMigration).toContain("profiles_time_format_check");
+  });
+
+  it("maps legacy avatar ids to image-backed avatar ids", () => {
+    expect(imageAvatarIdsMigration).toContain(
+      "drop constraint if exists profiles_avatar_id_check",
+    );
+    expect(imageAvatarIdsMigration).toContain("alter column avatar_id set default '1'");
+    expect(imageAvatarIdsMigration).toContain("when 'pomegranate' then '4'");
+    expect(imageAvatarIdsMigration).toContain("when 'avocado' then '1'");
+    expect(imageAvatarIdsMigration).toContain("when 'strawberry' then '2'");
+    expect(imageAvatarIdsMigration).toContain("when 'carrot' then '6'");
+    expect(imageAvatarIdsMigration).toContain("when 'lemon' then '3'");
+    expect(imageAvatarIdsMigration).toContain("when 'walnut' then '9'");
+    expect(imageAvatarIdsMigration).toContain(
+      "check (avatar_id in ('1', '2', '3', '4', '5', '6', '7', '8', '9'))",
     );
   });
 });

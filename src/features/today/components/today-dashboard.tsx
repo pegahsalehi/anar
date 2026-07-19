@@ -38,7 +38,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         eyebrow={data.displayDate}
         eyebrowClassName="text-[#45B385]"
         title="How is today going?"
-        description="Track today's intake, review macro progress, and log favorite foods quickly."
+        description="Track today's intake, review nutrition target progress, and log favorite foods quickly."
         action={
           <button
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
@@ -97,7 +97,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-base font-semibold text-foreground">Quick access</h2>
-          <Link className="text-sm font-semibold text-foreground underline-offset-4 hover:text-coral hover:underline" href="/foods">
+          <Link className="text-sm font-semibold text-foreground underline-offset-4 hover:underline" href="/foods">
             Manage library
           </Link>
         </div>

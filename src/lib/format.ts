@@ -43,9 +43,10 @@ export function formatDate(date: Date) {
   return dateFormatter.format(date);
 }
 
-export function formatTime(date: Date, timeZone?: string) {
+export function formatTime(date: Date, timeZone?: string, timeFormat: "12h" | "24h" = "12h") {
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
+    hour12: timeFormat === "12h",
     minute: "2-digit",
     timeZone,
   }).format(date);

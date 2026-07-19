@@ -7,8 +7,13 @@ import type {
   WeeklyProgressData,
   WeeklyProgressMetric,
   WeeklyProgressMetricValue,
-  WeeklyProgressRangeStatus,
+  WeeklyProgressTargetStatus,
 } from "@/features/history/types";
+import {
+  getNutrientTint,
+  nutrientPalette,
+  type NutrientVariant,
+} from "@/components/nutrition/nutrient-theme";
 import { formatCalories, formatDecimal, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -20,10 +25,12 @@ type MetricConfig = {
   label: string;
   shortLabel: string;
   unit: "cal" | "g";
+  variant: NutrientVariant;
   color: string;
+  haloColor: string;
+  selectedColor: string;
   softColor: string;
-  rangeColor: string;
-  rangeBorderColor: string;
+  targetLineColor: string;
 };
 
 const metricConfigs: Record<WeeklyProgressMetric, MetricConfig> = {
@@ -31,37 +38,45 @@ const metricConfigs: Record<WeeklyProgressMetric, MetricConfig> = {
     label: "Calories",
     shortLabel: "Cal",
     unit: "cal",
-    color: "#FF1744",
-    softColor: "rgb(255 23 68 / 0.14)",
-    rangeColor: "rgb(255 23 68 / 0.16)",
-    rangeBorderColor: "rgb(255 23 68 / 0.28)",
+    variant: "calories",
+    color: nutrientPalette.calories.color,
+    haloColor: getNutrientTint("calories", 0.07),
+    selectedColor: getNutrientTint("calories", 0.055),
+    softColor: getNutrientTint("calories", 0.14),
+    targetLineColor: getNutrientTint("calories", 0.78),
   },
   protein: {
     label: "Protein",
     shortLabel: "Protein",
     unit: "g",
-    color: "#7C4DFF",
-    softColor: "rgb(124 77 255 / 0.14)",
-    rangeColor: "rgb(124 77 255 / 0.16)",
-    rangeBorderColor: "rgb(124 77 255 / 0.28)",
+    variant: "protein",
+    color: nutrientPalette.protein.color,
+    haloColor: getNutrientTint("protein", 0.07),
+    selectedColor: getNutrientTint("protein", 0.055),
+    softColor: getNutrientTint("protein", 0.14),
+    targetLineColor: getNutrientTint("protein", 0.78),
   },
   carbohydrates: {
     label: "Carbs",
     shortLabel: "Carbs",
     unit: "g",
-    color: "#00D8FF",
-    softColor: "rgb(0 216 255 / 0.14)",
-    rangeColor: "rgb(0 216 255 / 0.18)",
-    rangeBorderColor: "rgb(0 216 255 / 0.32)",
+    variant: "carbs",
+    color: nutrientPalette.carbs.color,
+    haloColor: getNutrientTint("carbs", 0.07),
+    selectedColor: getNutrientTint("carbs", 0.055),
+    softColor: getNutrientTint("carbs", 0.14),
+    targetLineColor: getNutrientTint("carbs", 0.85),
   },
   fat: {
     label: "Fat",
     shortLabel: "Fat",
     unit: "g",
-    color: "#FF9100",
-    softColor: "rgb(255 145 0 / 0.14)",
-    rangeColor: "rgb(255 145 0 / 0.16)",
-    rangeBorderColor: "rgb(255 145 0 / 0.28)",
+    variant: "fat",
+    color: nutrientPalette.fat.color,
+    haloColor: getNutrientTint("fat", 0.07),
+    selectedColor: getNutrientTint("fat", 0.055),
+    softColor: getNutrientTint("fat", 0.14),
+    targetLineColor: getNutrientTint("fat", 0.82),
   },
 };
 
@@ -79,7 +94,7 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
     const largestValue = Math.max(
       ...data.days.flatMap((day) => {
         const value = day.values[selectedMetric];
-        return [value.consumed, value.minTarget, value.maxTarget];
+        return [value.consumed, value.target];
       }),
       1,
     );
@@ -92,7 +107,7 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
     <section className="rounded-md border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-coral">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Weekly progress
           </p>
           <h2 className="mt-1 text-xl font-semibold text-card-foreground">
@@ -119,7 +134,7 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
 
       <div
         aria-label="Select nutrition metric"
-        className="mt-5 grid grid-cols-2 gap-2 rounded-md bg-muted p-1 sm:grid-cols-4"
+        className="mt-5 grid grid-cols-2 gap-2 rounded-md border border-soft-border bg-surface-soft p-1 sm:grid-cols-4"
         role="tablist"
       >
         {metrics.map((key) => {
@@ -127,6 +142,7 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
           const isSelected = key === selectedMetric;
           const selectedStyle = isSelected
             ? ({
+                backgroundColor: config.selectedColor,
                 boxShadow: `inset 0 0 0 1px ${config.color}, 0 8px 18px ${config.softColor}`,
                 color: config.color,
               } satisfies CSSProperties)
@@ -166,32 +182,29 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
           </span>
           <span className="inline-flex items-center gap-2">
             <span
-              className="h-2.5 w-8 rounded-full border"
-              style={{ backgroundColor: metric.rangeColor, borderColor: metric.rangeBorderColor }}
+              className="h-0.5 w-8 rounded-full"
+              style={{ backgroundColor: metric.targetLineColor }}
             />
-            Target range uses saved min-max per day
+            Target line uses saved daily target
           </span>
         </div>
         <div className="grid grid-cols-7 gap-1.5 sm:gap-3">
           {data.days.map((day) => {
             const value = day.values[selectedMetric];
             const barHeight = getRatioPercent(value.consumed, chartMax);
-            const targetMinPosition = getRatioPercent(value.minTarget, chartMax);
-            const targetMaxPosition = getRatioPercent(value.maxTarget, chartMax);
-            const targetBandBottom = Math.min(targetMinPosition, targetMaxPosition);
-            const targetBandHeight = Math.max(Math.abs(targetMaxPosition - targetMinPosition), 1);
-            const rangeStatusLabel = formatRangeStatus(value.rangeStatus);
+            const targetPosition = getRatioPercent(value.target, chartMax);
+            const targetStatusLabel = formatTargetStatus(value.targetStatus);
             const tooltip = buildTooltip(day.date, metric, value);
 
             return (
               <Link
-                aria-label={`${day.label}, ${day.date}. ${tooltip}. ${rangeStatusLabel}`}
+                aria-label={`${day.label}, ${day.date}. ${tooltip}. ${targetStatusLabel}`}
                 className={cn(
                   "group relative flex min-w-0 flex-col items-center gap-2 rounded-sm p-1.5 outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                 )}
                 href={`/history/${day.date}`}
                 key={day.date}
-                style={day.isToday ? { backgroundColor: metric.softColor } : undefined}
+                style={day.isToday ? { backgroundColor: metric.haloColor } : undefined}
                 title={tooltip}
               >
                 <span
@@ -200,8 +213,8 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
                 >
                   <strong className="block font-semibold">{day.date}</strong>
                   <span className="block">Consumed: {formatMetricValue(value.consumed, metric)}</span>
-                  <span className="block">Range: {formatMetricRange(value, metric)}</span>
-                  <span className="block">Status: {rangeStatusLabel}</span>
+                  <span className="block">Target: {formatMetricValue(value.target, metric)}</span>
+                  <span className="block">Status: {targetStatusLabel}</span>
                   <span className="block">
                     Complete: {formatPercent(value.completionRatio)}
                   </span>
@@ -209,12 +222,11 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
                 <span className="relative flex h-44 w-full items-end rounded-sm border border-border bg-background p-1.5 sm:h-56">
                   <span
                     aria-hidden="true"
-                    className="absolute left-1.5 right-1.5 z-0 rounded-sm"
+                    className="absolute left-1.5 right-1.5 z-10 h-0.5 rounded-full"
                     style={{
-                      backgroundColor: metric.rangeColor,
-                      bottom: `${targetBandBottom}%`,
-                      boxShadow: `inset 0 0 0 1px ${metric.rangeBorderColor}`,
-                      height: `${targetBandHeight}%`,
+                      backgroundColor: metric.targetLineColor,
+                      bottom: `${targetPosition}%`,
+                      boxShadow: `0 0 0 1px rgb(255 255 255 / 0.78), 0 4px 10px ${metric.softColor}`,
                     }}
                   />
                   <span
@@ -233,17 +245,17 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
                 <span
                   className={cn(
                     "max-w-full truncate rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-4",
-                    getRangeStatusClassName(value.rangeStatus),
+                    getTargetStatusClassName(value.targetStatus),
                   )}
                 >
-                  {rangeStatusLabel}
+                  {targetStatusLabel}
                 </span>
                 <span
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold sm:h-9 sm:w-9",
                     day.isToday
                       ? "text-white"
-                      : "bg-muted text-muted-foreground",
+                      : "bg-surface-muted text-muted-foreground",
                   )}
                   style={
                     day.isToday
@@ -300,48 +312,42 @@ function buildTooltip(
   metric: MetricConfig,
   value: WeeklyProgressMetricValue,
 ) {
-  return `${date}: consumed ${formatMetricValue(value.consumed, metric)}, range ${formatMetricRange(
-    value,
+  return `${date}: consumed ${formatMetricValue(value.consumed, metric)}, target ${formatMetricValue(
+    value.target,
     metric,
-  )}, ${formatRangeStatus(value.rangeStatus).toLowerCase()}, ${formatPercent(value.completionRatio)} complete`;
+  )}, ${formatTargetStatus(value.targetStatus).toLowerCase()}, ${formatPercent(value.completionRatio)} complete`;
 }
 
 function formatMetricValue(value: number, metric: MetricConfig) {
   return metric.unit === "cal" ? formatCalories(value) : `${formatDecimal(value)} g`;
 }
 
-function formatMetricRange(value: WeeklyProgressMetricValue, metric: MetricConfig) {
-  return value.minTarget === value.maxTarget
-    ? formatMetricValue(value.maxTarget, metric)
-    : `${formatMetricValue(value.minTarget, metric)}-${formatMetricValue(value.maxTarget, metric)}`;
-}
-
 function getMetricForeground(metric: WeeklyProgressMetric) {
   return metric === "carbohydrates" || metric === "fat" ? "#102A43" : "#FFFFFF";
 }
 
-function formatRangeStatus(status: WeeklyProgressRangeStatus) {
+function formatTargetStatus(status: WeeklyProgressTargetStatus) {
   if (status === "below") {
-    return "Below range";
+    return "Below target";
   }
 
   if (status === "above") {
-    return "Above range";
+    return "Above target";
   }
 
-  return "In range";
+  return "Target reached";
 }
 
-function getRangeStatusClassName(status: WeeklyProgressRangeStatus) {
-  if (status === "inside") {
-    return "bg-primary/15 text-foreground";
+function getTargetStatusClassName(status: WeeklyProgressTargetStatus) {
+  if (status === "reached") {
+    return "border border-primary/25 bg-primary/10 text-foreground";
   }
 
   if (status === "above") {
-    return "bg-coral/10 text-coral";
+    return "border border-soft-border bg-surface-soft text-foreground";
   }
 
-  return "bg-muted text-muted-foreground";
+  return "border border-soft-border bg-surface-muted text-muted-foreground";
 }
 
 function formatWeekRange(weekStart: string, weekEnd: string) {

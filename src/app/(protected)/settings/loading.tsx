@@ -10,21 +10,8 @@ export default function SettingsLoading() {
       <div className="grid gap-5">
         <SettingsAccordionSkeleton isOpen />
         <SettingsAccordionSkeleton />
+        <SettingsAccordionSkeleton />
       </div>
-
-      <section className="rounded-md border border-border bg-card p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="flex gap-4">
-            <div className="h-10 w-10 shrink-0 animate-pulse rounded-md bg-muted" />
-            <div className="space-y-3">
-              <div className="h-5 w-44 animate-pulse rounded-sm bg-muted" />
-              <div className="h-4 w-full max-w-xl animate-pulse rounded-sm bg-muted" />
-              <div className="h-4 w-80 max-w-full animate-pulse rounded-sm bg-muted" />
-            </div>
-          </div>
-          <div className="h-11 w-24 animate-pulse rounded-md bg-muted" />
-        </div>
-      </section>
     </div>
   );
 }

@@ -1,13 +1,13 @@
+import type { WeekStartsOn } from "@/lib/dates";
+
 export type WeeklyProgressMetric = "calories" | "protein" | "carbohydrates" | "fat";
-export type WeeklyProgressRangeStatus = "below" | "inside" | "above";
+export type WeeklyProgressTargetStatus = "below" | "reached" | "above";
 
 export type WeeklyProgressMetricValue = {
   consumed: number;
-  minTarget: number;
   target: number;
-  maxTarget: number;
   completionRatio: number;
-  rangeStatus: WeeklyProgressRangeStatus;
+  targetStatus: WeeklyProgressTargetStatus;
 };
 
 export type WeeklyProgressDay = {
@@ -23,5 +23,6 @@ export type WeeklyProgressData = {
   weekEnd: string;
   previousWeekStart: string;
   nextWeekStart: string;
+  weekStartsOn: WeekStartsOn;
   days: WeeklyProgressDay[];
 };

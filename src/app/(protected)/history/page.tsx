@@ -34,7 +34,11 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       ) : null}
       <StreakCard {...streak} />
       <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
-        <CalendarPreview activeDates={activeDates} selectedDate={latestDate} />
+        <CalendarPreview
+          activeDates={activeDates}
+          selectedDate={latestDate}
+          weekStartsOn={weeklyProgress.weekStartsOn}
+        />
         <WeeklyProgressChart data={weeklyProgress} />
       </div>
     </div>

@@ -26,7 +26,7 @@ export function StreakCard({
       className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#07111F] p-4 text-white shadow-[0_16px_34px_rgb(16_42_67_/_0.2),0_0_26px_rgb(85_220_164_/_0.08)] sm:p-5 lg:px-6 lg:py-5"
       style={{
         background:
-          "linear-gradient(135deg, rgba(85, 220, 164, 0.16) 0%, rgba(85, 220, 164, 0) 28%), linear-gradient(315deg, rgba(244, 63, 94, 0.16) 0%, rgba(244, 63, 94, 0) 30%), #07111F",
+          "linear-gradient(135deg, rgba(85, 220, 164, 0.16) 0%, rgba(85, 220, 164, 0) 28%), linear-gradient(315deg, rgba(226, 231, 228, 0.1) 0%, rgba(226, 231, 228, 0) 30%), #07111F",
       }}
     >
       <StreakDecorations />
@@ -88,7 +88,7 @@ export function StreakCard({
             <StreakStat
               icon={<CalendarCheck aria-hidden="true" className="h-4 w-4" strokeWidth={2} />}
               label="Active days"
-              tone="red"
+              tone="neutral"
               value={formatInteger(activeDays)}
             />
           </div>
@@ -117,7 +117,7 @@ function StreakStat({
 }: {
   icon: ReactNode;
   label: string;
-  tone: "green" | "red";
+  tone: "green" | "neutral";
   value: string;
 }) {
   return (
@@ -127,7 +127,7 @@ function StreakStat({
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
           tone === "green"
             ? "bg-[#55DCA4]/[0.12] text-[#75F1BD]"
-            : "bg-[#F43F5E]/[0.13] text-[#FF8BA0]",
+            : "bg-white/[0.08] text-white/[0.74]",
         )}
       >
         {icon}
@@ -147,10 +147,10 @@ function StreakDecorations() {
       viewBox="0 0 960 260"
     >
       <path d="M0 225 C150 196 280 230 431 204 C622 171 754 198 960 176 L960 260 L0 260 Z" fill="#55DCA4" opacity="0.035" />
-      <path d="M758 0 C805 54 883 45 960 31 L960 0 Z" fill="#F43F5E" opacity="0.07" />
+      <path d="M758 0 C805 54 883 45 960 31 L960 0 Z" fill="#E2E7E4" opacity="0.055" />
       <path d="M0 0 L185 0 C124 42 58 48 0 30 Z" fill="#55DCA4" opacity="0.05" />
       <path d="M870 68 L874 77 L884 81 L874 85 L870 95 L866 85 L856 81 L866 77 Z" fill="#75F1BD" opacity="0.48" />
-      <path d="M906 120 L910 129 L919 133 L910 137 L906 146 L902 137 L893 133 L902 129 Z" fill="#FF8BA0" opacity="0.42" />
+      <path d="M906 120 L910 129 L919 133 L910 137 L906 146 L902 137 L893 133 L902 129 Z" fill="#E2E7E4" opacity="0.34" />
       <path d="M52 178 L55 185 L62 188 L55 191 L52 199 L49 191 L42 188 L49 185 Z" fill="#75F1BD" opacity="0.46" />
     </svg>
   );
