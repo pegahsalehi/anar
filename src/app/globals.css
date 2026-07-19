@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
+  --background: 251 253 251;
+  --background-alt: 245 250 247;
+  --foreground: 27 41 35;
+  --card: 255 255 255;
+  --card-foreground: 27 41 35;
+  --border: 220 233 225;
+  --muted: 236 248 241;
+  --muted-foreground: 104 119 111;
+  --primary: 114 227 173;
+  --primary-foreground: 18 53 42;
+  --coral: 222 38 36;
+  --coral-foreground: 255 255 255;
+  --fresh: 63 189 126;
+  --fresh-foreground: 18 53 42;
+  --ring: 63 189 126;
+}
+
+.dark {
+  color-scheme: light;
+  --background: 251 253 251;
+  --background-alt: 245 250 247;
+  --foreground: 27 41 35;
+  --card: 255 255 255;
+  --card-foreground: 27 41 35;
+  --border: 220 233 225;
+  --muted: 236 248 241;
+  --muted-foreground: 104 119 111;
+  --primary: 114 227 173;
+  --primary-foreground: 18 53 42;
+  --coral: 222 38 36;
+  --coral-foreground: 255 255 255;
+  --fresh: 63 189 126;
+  --fresh-foreground: 18 53 42;
+  --ring: 63 189 126;
+}
+
+* {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+html {
+  direction: ltr;
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid rgb(var(--ring) / 0.5);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgb(var(--primary) / 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

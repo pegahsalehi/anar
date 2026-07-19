@@ -1,0 +1,50 @@
+{
+  "name": "anar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --pass-with-no-tests"
+  },
+  "engines": {
+    "node": ">=18.20.0"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.8.0",
+    "@supabase/supabase-js": "2.78.0",
+    "clsx": "2.1.1",
+    "lucide-react": "1.25.0",
+    "next": "15.5.20",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-hook-form": "7.82.0",
+    "tailwind-merge": "3.6.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "18.19.130",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "4.7.0",
+    "autoprefixer": "10.5.4",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.5.20",
+    "jsdom": "26.1.0",
+    "postcss": "8.5.19",
+    "tailwindcss": "3.4.19",
+    "typescript": "5.9.3",
+    "vite": "6.4.3",
+    "vitest": "3.2.7"
+  }
+}
