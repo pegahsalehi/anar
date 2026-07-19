@@ -30,7 +30,7 @@ export async function addFoodLogAction(
   const { data: food, error: foodError } = await supabase
     .from("foods")
     .select(
-      "id, name, image_path, calories_per_100g, protein_per_100g, carbohydrates_per_100g",
+      "id, name, image_path, calories_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g",
     )
     .eq("id", parsed.data.foodId)
     .eq("user_id", user.id)

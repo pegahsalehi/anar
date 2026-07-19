@@ -17,6 +17,7 @@ export type TodayFoodOption = Pick<
   | "calories_per_100g"
   | "protein_per_100g"
   | "carbohydrates_per_100g"
+  | "fat_per_100g"
 >;
 
 export type TodayFoodLogItem = {
@@ -27,6 +28,7 @@ export type TodayFoodLogItem = {
   calories: number;
   protein: number;
   carbohydrates: number;
+  fat: number;
   loggedAt: string;
   time: string;
   imageUrl: string | null;

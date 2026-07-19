@@ -26,6 +26,7 @@ type TodayFoodRow = Pick<
   | "calories_per_100g"
   | "protein_per_100g"
   | "carbohydrates_per_100g"
+  | "fat_per_100g"
   | "is_favorite"
   | "created_at"
 >;
@@ -40,7 +41,7 @@ type ProfileTimezoneRow = Pick<
 >;
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
-  "calories_target" | "protein_target" | "carbohydrates_target"
+  "calories_target" | "protein_target" | "carbohydrates_target" | "fat_target"
 >;
 
 export async function getTodayDashboardData(): Promise<TodayDashboardData> {
@@ -71,7 +72,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   const [goalResult, foodsResult, logsResult, logDaysResult] = await Promise.all([
     supabase
       .from("daily_goals")
-      .select("calories_target, protein_target, carbohydrates_target")
+      .select("calories_target, protein_target, carbohydrates_target, fat_target")
       .eq("user_id", user.id)
       .lte("effective_date", localDate)
       .order("effective_date", { ascending: false })
@@ -80,7 +81,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
     supabase
       .from("foods")
       .select(
-        "id, name, image_path, calories_per_100g, protein_per_100g, carbohydrates_per_100g, is_favorite, created_at",
+        "id, name, image_path, calories_per_100g, protein_per_100g, carbohydrates_per_100g, fat_per_100g, is_favorite, created_at",
       )
       .eq("user_id", user.id)
       .is("deleted_at", null)
@@ -106,6 +107,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
         caloriesTarget: goal.calories_target,
         proteinTarget: goal.protein_target,
         carbohydratesTarget: goal.carbohydrates_target,
+        fatTarget: goal.fat_target,
       }
     : defaultDailyGoals;
 
@@ -124,6 +126,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
     calories_per_100g: food.calories_per_100g,
     protein_per_100g: food.protein_per_100g,
     carbohydrates_per_100g: food.carbohydrates_per_100g,
+    fat_per_100g: food.fat_per_100g,
   }));
 
   const mappedLogs: TodayFoodLogItem[] = logs.map((log) => {
@@ -132,6 +135,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
         calories: log.calories_per_100g_snapshot,
         protein: log.protein_per_100g_snapshot,
         carbohydrates: log.carbohydrates_per_100g_snapshot,
+        fat: log.fat_per_100g_snapshot,
       },
       log.consumed_grams,
     );
@@ -144,6 +148,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
       calories: consumed.calories,
       protein: consumed.protein,
       carbohydrates: consumed.carbohydrates,
+      fat: consumed.fat,
       loggedAt: log.logged_at,
       time: formatTime(new Date(log.logged_at), timezone),
       imageUrl: log.image_path_snapshot
@@ -157,6 +162,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
       calories: log.calories,
       protein: log.protein,
       carbohydrates: log.carbohydrates,
+      fat: log.fat,
     })),
   );
 
@@ -183,7 +189,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
 
 function buildEmptyDashboardData(): TodayDashboardData {
   const goals: NutritionTargets = defaultDailyGoals;
-  const totals = { calories: 0, protein: 0, carbohydrates: 0 };
+  const totals = { calories: 0, protein: 0, carbohydrates: 0, fat: 0 };
 
   return {
     localDate: "",

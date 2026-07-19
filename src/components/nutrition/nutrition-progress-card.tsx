@@ -1,8 +1,8 @@
-import { Flame, Leaf, Wheat } from "lucide-react";
+import { Droplet, Drumstick, Flame, Wheat } from "lucide-react";
 import { formatCalories, formatDecimal, formatGram, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-type NutritionKind = "calories" | "protein" | "carbohydrates";
+type NutritionKind = "calories" | "protein" | "carbohydrates" | "fat";
 
 type NutritionProgressCardProps = {
   kind: NutritionKind;
@@ -19,12 +19,17 @@ const cardStyles = {
     bar: "bg-primary",
   },
   protein: {
-    icon: Leaf,
+    icon: Drumstick,
     tone: "bg-fresh/15 text-fresh",
     bar: "bg-fresh",
   },
   carbohydrates: {
     icon: Wheat,
+    tone: "bg-muted text-fresh",
+    bar: "bg-fresh",
+  },
+  fat: {
+    icon: Droplet,
     tone: "bg-muted text-fresh",
     bar: "bg-fresh",
   },
@@ -58,7 +63,7 @@ export function NutritionProgressCard({
           </p>
         </div>
         <span className={cn("flex h-10 w-10 items-center justify-center rounded-md", style.tone)}>
-          <Icon aria-hidden="true" className="h-5 w-5" />
+          <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={2} />
         </span>
       </div>
       <div className="mt-5">

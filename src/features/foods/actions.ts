@@ -56,6 +56,7 @@ export async function createFoodAction(
     calories_per_100g: parsed.data.caloriesPer100g,
     protein_per_100g: parsed.data.proteinPer100g,
     carbohydrates_per_100g: parsed.data.carbohydratesPer100g,
+    fat_per_100g: parsed.data.fatPer100g,
     notes: parsed.data.notes || null,
     is_favorite: parsed.data.isFavorite,
   });
@@ -135,6 +136,7 @@ export async function updateFoodAction(
       calories_per_100g: parsed.data.caloriesPer100g,
       protein_per_100g: parsed.data.proteinPer100g,
       carbohydrates_per_100g: parsed.data.carbohydratesPer100g,
+      fat_per_100g: parsed.data.fatPer100g,
       notes: parsed.data.notes || null,
       is_favorite: parsed.data.isFavorite,
     })
@@ -212,6 +214,7 @@ function validationError(
         field === "caloriesPer100g" ||
         field === "proteinPer100g" ||
         field === "carbohydratesPer100g" ||
+        field === "fatPer100g" ||
         field === "notes" ||
         field === "isFavorite") &&
       !fieldErrors[field]

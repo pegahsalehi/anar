@@ -30,12 +30,19 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
       target: progress.carbohydrates.target,
       unit: "gram" as const,
     },
+    {
+      kind: "fat" as const,
+      label: "Fat",
+      consumed: progress.fat.consumed,
+      target: progress.fat.target,
+      unit: "gram" as const,
+    },
   ];
 
   return (
     <section
       aria-label="Daily nutrition summary"
-      className={cn("grid gap-4", compact ? "md:grid-cols-3" : "md:grid-cols-3")}
+      className={cn("grid gap-4", compact ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2 xl:grid-cols-4")}
     >
       {dailyProgress.map((item) => (
         <NutritionProgressCard key={item.kind} {...item} />

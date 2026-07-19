@@ -15,6 +15,7 @@ describe("buildFoodLogInsertPayload", () => {
         calories_per_100g: 97,
         protein_per_100g: 9,
         carbohydrates_per_100g: 3.9,
+        fat_per_100g: 5,
       },
     });
 
@@ -29,6 +30,7 @@ describe("buildFoodLogInsertPayload", () => {
       calories_per_100g_snapshot: 97,
       protein_per_100g_snapshot: 9,
       carbohydrates_per_100g_snapshot: 3.9,
+      fat_per_100g_snapshot: 5,
     });
   });
 });

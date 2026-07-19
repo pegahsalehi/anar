@@ -12,7 +12,7 @@ export function StreakCard({ currentStreak, longestStreak, activeDays }: StreakC
     <article className="rounded-md border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-foreground">
-          <Flame aria-hidden="true" className="h-5 w-5" />
+          <Flame aria-hidden="true" className="h-5 w-5" strokeWidth={2} />
         </span>
         <div>
           <h2 className="text-sm font-bold text-card-foreground">Logging streak</h2>

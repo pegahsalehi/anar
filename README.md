@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Anar
 
 Anar is an English LTR personal nutrition tracker built with Next.js App Router, TypeScript, Tailwind CSS, and Supabase.
@@ -56,3 +57,7 @@ npm run build
 ```
 
 The current local environment uses Node.js 18.20.4, so the project is pinned to the latest compatible Next.js 15 line instead of Next.js 16, which requires Node.js 20.9+.
+=======
+# anar
+A personal nutrition tracking web application built with Next.js and Supabase.
+>>>>>>> 78da3695a01834b3ad880cbb25cf926e02f5bd17

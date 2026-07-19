@@ -56,9 +56,11 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         </p>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_18rem]">
+      <div className="space-y-4">
         <DailySummary progress={data.progress} />
-        <StreakCard {...data.streak} />
+        <div className="max-w-sm">
+          <StreakCard {...data.streak} />
+        </div>
       </div>
 
       <section className="space-y-4">
@@ -260,7 +262,8 @@ function LogFoodDialog({
                   <p className="mt-1 text-muted-foreground">
                     {formatCalories(selectedFood.calories_per_100g)} cal,{" "}
                     {formatDecimal(selectedFood.protein_per_100g)} g protein,{" "}
-                    {formatDecimal(selectedFood.carbohydrates_per_100g)} g carbs per 100 g
+                    {formatDecimal(selectedFood.carbohydrates_per_100g)} g carbs,{" "}
+                    {formatDecimal(selectedFood.fat_per_100g)} g fat per 100 g
                   </p>
                 </div>
               </div>

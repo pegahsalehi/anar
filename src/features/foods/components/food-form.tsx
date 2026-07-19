@@ -35,6 +35,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
       caloriesPer100g: food ? String(food.calories_per_100g) : "",
       proteinPer100g: food ? String(food.protein_per_100g) : "",
       carbohydratesPer100g: food ? String(food.carbohydrates_per_100g) : "",
+      fatPer100g: food ? String(food.fat_per_100g) : "",
       notes: food?.notes ?? "",
       isFavorite: food?.is_favorite ?? false,
     },
@@ -139,7 +140,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               />
             </label>
           </FieldError>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <FieldError message={state.fieldErrors.caloriesPer100g}>
               <label className="block">
                 <span className="text-sm font-semibold">Calories per 100 g</span>
@@ -173,6 +174,18 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
                   placeholder="13.7"
                   type="text"
                   {...register("carbohydratesPer100g")}
+                />
+              </label>
+            </FieldError>
+            <FieldError message={state.fieldErrors.fatPer100g}>
+              <label className="block">
+                <span className="text-sm font-semibold">Fat</span>
+                <input
+                  className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
+                  inputMode="decimal"
+                  placeholder="65.2"
+                  type="text"
+                  {...register("fatPer100g")}
                 />
               </label>
             </FieldError>

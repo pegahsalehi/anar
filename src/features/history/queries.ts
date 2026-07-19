@@ -19,7 +19,7 @@ type ProfileTimezoneRow = Pick<
 >;
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
-  "calories_target" | "protein_target" | "carbohydrates_target"
+  "calories_target" | "protein_target" | "carbohydrates_target" | "fat_target"
 >;
 
 type HistoryDateData = {
@@ -82,7 +82,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
       .limit(500),
     supabase
       .from("daily_goals")
-      .select("calories_target, protein_target, carbohydrates_target")
+      .select("calories_target, protein_target, carbohydrates_target, fat_target")
       .eq("user_id", user.id)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false })
@@ -111,6 +111,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
           calories: log.calories_per_100g_snapshot,
           protein: log.protein_per_100g_snapshot,
           carbohydrates: log.carbohydrates_per_100g_snapshot,
+          fat: log.fat_per_100g_snapshot,
         },
         log.consumed_grams,
       );
@@ -122,6 +123,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
         calories: consumed.calories,
         protein: consumed.protein,
         carbohydrates: consumed.carbohydrates,
+        fat: consumed.fat,
         time: formatTime(new Date(log.logged_at), timezone),
         imageUrl: log.image_path_snapshot
           ? imageUrls.get(log.image_path_snapshot) ?? null
@@ -133,6 +135,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
       calories: log.calories,
       protein: log.protein,
       carbohydrates: log.carbohydrates,
+      fat: log.fat,
     })),
   );
   const goals = goal
@@ -140,6 +143,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
         caloriesTarget: goal.calories_target,
         proteinTarget: goal.protein_target,
         carbohydratesTarget: goal.carbohydrates_target,
+        fatTarget: goal.fat_target,
       }
     : defaultDailyGoals;
 
@@ -165,7 +169,7 @@ function buildEmptyHistoryDateData(): HistoryDateData {
     activeDates: [],
     logs: [],
     progress: progressFromTotals(
-      { calories: 0, protein: 0, carbohydrates: 0 },
+      { calories: 0, protein: 0, carbohydrates: 0, fat: 0 },
       defaultDailyGoals,
     ),
     error: null,

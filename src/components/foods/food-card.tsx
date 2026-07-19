@@ -27,7 +27,7 @@ export function FoodCard({ food }: FoodCardProps) {
         </div>
         <FavoriteFoodButton foodId={food.id} isFavorite={food.is_favorite} />
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
+      <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
         <div className="rounded-md bg-muted p-3">
           <dt className="text-muted-foreground">Protein</dt>
           <dd className="mt-1 font-bold">{formatDecimal(food.protein_per_100g)} g</dd>
@@ -35,6 +35,10 @@ export function FoodCard({ food }: FoodCardProps) {
         <div className="rounded-md bg-muted p-3">
           <dt className="text-muted-foreground">Carbs</dt>
           <dd className="mt-1 font-bold">{formatDecimal(food.carbohydrates_per_100g)} g</dd>
+        </div>
+        <div className="rounded-md bg-muted p-3">
+          <dt className="text-muted-foreground">Fat</dt>
+          <dd className="mt-1 font-bold">{formatDecimal(food.fat_per_100g)} g</dd>
         </div>
       </dl>
       <div className="mt-auto flex items-center justify-between gap-2 pt-4">

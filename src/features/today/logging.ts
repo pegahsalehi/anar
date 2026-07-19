@@ -8,6 +8,7 @@ type FoodSnapshotSource = Pick<
   | "calories_per_100g"
   | "protein_per_100g"
   | "carbohydrates_per_100g"
+  | "fat_per_100g"
 >;
 
 type FoodLogInsert = Database["public"]["Tables"]["food_logs"]["Insert"];
@@ -38,5 +39,6 @@ export function buildFoodLogInsertPayload({
     calories_per_100g_snapshot: food.calories_per_100g,
     protein_per_100g_snapshot: food.protein_per_100g,
     carbohydrates_per_100g_snapshot: food.carbohydrates_per_100g,
+    fat_per_100g_snapshot: food.fat_per_100g,
   };
 }

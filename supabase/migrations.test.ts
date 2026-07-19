@@ -20,6 +20,15 @@ const storageMigration = fs.readFileSync(
   ),
   "utf8",
 );
+const fatMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260719090000_add_fat_nutrition_metric.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase migrations", () => {
   it("grant app-owned tables only to authenticated", () => {
@@ -38,6 +47,18 @@ describe("Supabase migrations", () => {
     expect(schemaMigration).not.toMatch(
       /grant\s+.+\s+on\s+table\s+public\.(profiles|daily_goals|foods|food_logs)\s+to\s+anon/i,
     );
+    expect(fatMigration).toContain(
+      "grant select, insert, update on table public.daily_goals to authenticated;",
+    );
+    expect(fatMigration).toContain(
+      "grant select, insert, update on table public.foods to authenticated;",
+    );
+    expect(fatMigration).toContain(
+      "grant select, insert, update, delete on table public.food_logs to authenticated;",
+    );
+    expect(fatMigration).not.toMatch(
+      /grant\s+.+\s+on\s+table\s+public\.(daily_goals|foods|food_logs)\s+to\s+anon/i,
+    );
   });
 
   it("keeps strict owner RLS policies and private storage policies", () => {
@@ -49,5 +70,17 @@ describe("Supabase migrations", () => {
     expect(storageMigration).toContain("false,");
     expect(storageMigration).toContain("to authenticated");
     expect(storageMigration).toContain("(storage.foldername(name))[1] = auth.uid()::text");
+  });
+
+  it("adds fat columns with safe backfills and constraints", () => {
+    expect(fatMigration).toContain("add column if not exists fat_target");
+    expect(fatMigration).toContain("add column if not exists fat_per_100g");
+    expect(fatMigration).toContain("add column if not exists fat_per_100g_snapshot");
+    expect(fatMigration).toContain("set fat_target = 70");
+    expect(fatMigration).toContain("set fat_per_100g = 0");
+    expect(fatMigration).toContain("set fat_per_100g_snapshot = 0");
+    expect(fatMigration).toContain("daily_goals_positive_fat");
+    expect(fatMigration).toContain("foods_nonnegative_fat");
+    expect(fatMigration).toContain("food_logs_nonnegative_fat");
   });
 });

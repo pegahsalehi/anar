@@ -13,6 +13,7 @@ export type FoodLogListItem = {
   calories: number;
   protein: number;
   carbohydrates: number;
+  fat: number;
   time: string;
   imageUrl?: string | null;
 };
@@ -39,7 +40,7 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
           </p>
         </div>
       </div>
-      <dl className="grid grid-cols-3 gap-2 text-center text-xs sm:w-72">
+      <dl className="grid grid-cols-2 gap-2 text-center text-xs sm:w-96 sm:grid-cols-4">
         <div className="rounded-md bg-muted px-2 py-2">
           <dt className="text-muted-foreground">Calories</dt>
           <dd className="mt-1 font-bold">{formatCalories(log.calories)}</dd>
@@ -51,6 +52,10 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
         <div className="rounded-md bg-muted px-2 py-2">
           <dt className="text-muted-foreground">Carbs</dt>
           <dd className="mt-1 font-bold">{formatDecimal(log.carbohydrates)} g</dd>
+        </div>
+        <div className="rounded-md bg-muted px-2 py-2">
+          <dt className="text-muted-foreground">Fat</dt>
+          <dd className="mt-1 font-bold">{formatDecimal(log.fat)} g</dd>
         </div>
       </dl>
       {editable ? (
