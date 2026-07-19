@@ -2,6 +2,7 @@ import { CalendarPreview } from "@/components/history/calendar-preview";
 import { PageHeader } from "@/components/layout/page-header";
 import { DailySummary } from "@/components/nutrition/daily-summary";
 import { FoodLogItem } from "@/components/nutrition/food-log-item";
+import { StreakCard } from "@/components/nutrition/streak-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getHistoryDateData } from "@/features/history/queries";
 
@@ -31,12 +32,13 @@ export default async function HistoryDatePage({ params }: HistoryDatePageProps) 
           {data.error}
         </p>
       ) : null}
+      <StreakCard {...data.streak} />
       <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
         <CalendarPreview activeDates={data.activeDates} selectedDate={date} />
         <div className="space-y-5">
           <DailySummary compact progress={data.progress} />
           <section className="space-y-3">
-            <h2 className="text-base font-bold">Logged foods</h2>
+            <h2 className="text-base font-semibold">Logged foods</h2>
             {data.logs.length > 0 ? (
               <div className="grid gap-3">
                 {data.logs.map((log) => (

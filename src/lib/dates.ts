@@ -28,3 +28,28 @@ export function getCurrentTimeZone() {
 export function parseISODate(value: string) {
   return new Date(`${value}T00:00:00`);
 }
+
+export function isISODate(value: string | null | undefined): value is string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+export function addISODays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export function startOfISOWeek(value: string) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  const mondayOffset = (date.getUTCDay() + 6) % 7;
+  return addISODays(value, -mondayOffset);
+}
+
+export function getISOWeekDays(weekStart: string) {
+  return Array.from({ length: 7 }, (_, index) => addISODays(weekStart, index));
+}

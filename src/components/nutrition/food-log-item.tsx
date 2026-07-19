@@ -34,7 +34,7 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
           <FoodImage alt={`${log.name} image`} src={log.imageUrl ?? null} />
         </div>
         <div className="min-w-0">
-          <h3 className="truncate font-bold text-card-foreground">{log.name}</h3>
+          <h3 className="truncate font-semibold text-card-foreground">{log.name}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {formatGram(log.grams)}, {log.time}
           </p>
@@ -43,19 +43,19 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
       <dl className="grid grid-cols-2 gap-2 text-center text-xs sm:w-96 sm:grid-cols-4">
         <div className="rounded-md bg-muted px-2 py-2">
           <dt className="text-muted-foreground">Calories</dt>
-          <dd className="mt-1 font-bold">{formatCalories(log.calories)}</dd>
+          <dd className="mt-1 font-medium">{formatCalories(log.calories)}</dd>
         </div>
         <div className="rounded-md bg-muted px-2 py-2">
           <dt className="text-muted-foreground">Protein</dt>
-          <dd className="mt-1 font-bold">{formatDecimal(log.protein)} g</dd>
+          <dd className="mt-1 font-medium">{formatDecimal(log.protein)} g</dd>
         </div>
         <div className="rounded-md bg-muted px-2 py-2">
           <dt className="text-muted-foreground">Carbs</dt>
-          <dd className="mt-1 font-bold">{formatDecimal(log.carbohydrates)} g</dd>
+          <dd className="mt-1 font-medium">{formatDecimal(log.carbohydrates)} g</dd>
         </div>
         <div className="rounded-md bg-muted px-2 py-2">
           <dt className="text-muted-foreground">Fat</dt>
-          <dd className="mt-1 font-bold">{formatDecimal(log.fat)} g</dd>
+          <dd className="mt-1 font-medium">{formatDecimal(log.fat)} g</dd>
         </div>
       </dl>
       {editable ? (
@@ -63,7 +63,7 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
           <details className="group relative">
             <summary
               aria-label={`Edit ${log.name}`}
-              className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+              className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
             >
               <Pencil aria-hidden="true" className="h-4 w-4" />
             </summary>
@@ -82,7 +82,7 @@ export function FoodLogItem({ log, editable = true }: FoodLogItemProps) {
                 />
               </label>
               <button
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 font-bold text-primary-foreground transition hover:bg-[#59CF95]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 font-semibold text-primary-foreground transition hover:bg-[#49C995]"
                 type="submit"
               >
                 <Save aria-hidden="true" className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { foodFormSchema, validateOptionalFoodImage } from "@/features/foods/schemas";
 import { maxFoodImageSizeBytes } from "@/lib/storage/food-images";
+import { validFoodNumberMessage } from "@/features/foods/validation";
 
 describe("food form schema", () => {
   it("parses numeric strings and checkbox values", () => {
@@ -41,6 +42,40 @@ describe("food form schema", () => {
     expect(parsed.success).toBe(false);
     expect(parsed.error?.issues.map((issue) => issue.path[0])).toEqual(
       expect.arrayContaining(["name", "caloriesPer100g", "fatPer100g"]),
+    );
+  });
+
+  it("rejects invalid nutrition number input with field-level messages", () => {
+    const parsed = foodFormSchema.safeParse({
+      name: "Rice",
+      caloriesPer100g: "NaN",
+      proteinPer100g: "Infinity",
+      carbohydratesPer100g: "12abc",
+      fatPer100g: "$10",
+      isFavorite: "false",
+      imageAction: "keep",
+    });
+
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ["caloriesPer100g"],
+          message: validFoodNumberMessage,
+        }),
+        expect.objectContaining({
+          path: ["proteinPer100g"],
+          message: validFoodNumberMessage,
+        }),
+        expect.objectContaining({
+          path: ["carbohydratesPer100g"],
+          message: validFoodNumberMessage,
+        }),
+        expect.objectContaining({
+          path: ["fatPer100g"],
+          message: validFoodNumberMessage,
+        }),
+      ]),
     );
   });
 });
@@ -84,7 +119,7 @@ describe("food image validation", () => {
     });
   });
 
-  it("rejects images larger than 2 MB", () => {
+  it("rejects images larger than 1 MB", () => {
     const file = createFormDataFile({
       name: "large.png",
       type: "image/png",
@@ -93,7 +128,7 @@ describe("food image validation", () => {
 
     expect(validateOptionalFoodImage(file)).toEqual({
       ok: false,
-      error: "Images must be 2 MB or smaller.",
+      error: "Images must be 1 MB or smaller.",
     });
   });
 });

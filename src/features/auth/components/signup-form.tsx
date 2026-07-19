@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { LockKeyhole, Mail, UserRound } from "lucide-react";
+import { Mail, UserRound } from "lucide-react";
 import { signupAction } from "@/features/auth/actions";
 import { AuthMessage } from "@/features/auth/components/auth-message";
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button";
+import { PasswordInputField } from "@/features/auth/components/password-input-field";
 import { initialAuthState } from "@/features/auth/types";
+import { cn } from "@/lib/utils";
 
 export function SignupForm() {
   const [state, formAction] = useActionState(signupAction, initialAuthState);
@@ -20,65 +22,71 @@ export function SignupForm() {
       <input name="timezone" type="hidden" value={timezone} />
       <AuthMessage state={state} />
       <label className="block">
-        <span className="text-sm font-medium text-foreground">Display name</span>
-        <span className="mt-2 flex items-center gap-2 rounded-md border border-border bg-card px-3 py-3">
-          <UserRound aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm font-semibold text-[#12352A]">First name</span>
+        <span
+          className={cn(
+            "mt-2 flex min-h-12 items-center gap-3 rounded-md border border-[#DCE9E1] bg-white px-3.5 py-3 shadow-sm transition focus-within:border-[#55DCA4] focus-within:ring-4 focus-within:ring-[#55DCA4]/20",
+            state.fieldErrors.displayName && "border-[#DE2624] focus-within:border-[#DE2624] focus-within:ring-[#DE2624]/15",
+          )}
+        >
+          <UserRound aria-hidden="true" className="h-5 w-5 text-[#6A7E74]" strokeWidth={2} />
           <input
             aria-describedby={state.fieldErrors.displayName ? "signup-name-error" : undefined}
             aria-invalid={Boolean(state.fieldErrors.displayName)}
-            autoComplete="name"
-            className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
+            autoComplete="given-name"
+            className="min-w-0 flex-1 bg-transparent text-[#12352A] outline-none placeholder:text-[#8CA096]"
             name="displayName"
-            placeholder="Alex"
+            placeholder="Your first name"
             type="text"
           />
         </span>
         {state.fieldErrors.displayName ? (
-          <span className="mt-2 block text-sm text-coral" id="signup-name-error">
+          <span className="mt-2 block text-sm font-medium text-[#DE2624]" id="signup-name-error">
             {state.fieldErrors.displayName}
           </span>
         ) : null}
       </label>
       <label className="block">
-        <span className="text-sm font-medium text-foreground">Email</span>
-        <span className="mt-2 flex items-center gap-2 rounded-md border border-border bg-card px-3 py-3">
-          <Mail aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
+        <span className="text-sm font-semibold text-[#12352A]">Email</span>
+        <span
+          className={cn(
+            "mt-2 flex min-h-12 items-center gap-3 rounded-md border border-[#DCE9E1] bg-white px-3.5 py-3 shadow-sm transition focus-within:border-[#55DCA4] focus-within:ring-4 focus-within:ring-[#55DCA4]/20",
+            state.fieldErrors.email && "border-[#DE2624] focus-within:border-[#DE2624] focus-within:ring-[#DE2624]/15",
+          )}
+        >
+          <Mail aria-hidden="true" className="h-5 w-5 text-[#6A7E74]" strokeWidth={2} />
           <input
             aria-describedby={state.fieldErrors.email ? "signup-email-error" : undefined}
             aria-invalid={Boolean(state.fieldErrors.email)}
             autoComplete="email"
-            className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent text-[#12352A] outline-none placeholder:text-[#8CA096]"
             name="email"
             placeholder="you@example.com"
             type="email"
           />
         </span>
         {state.fieldErrors.email ? (
-          <span className="mt-2 block text-sm text-coral" id="signup-email-error">
+          <span className="mt-2 block text-sm font-medium text-[#DE2624]" id="signup-email-error">
             {state.fieldErrors.email}
           </span>
         ) : null}
       </label>
-      <label className="block">
-        <span className="text-sm font-medium text-foreground">Password</span>
-        <span className="mt-2 flex items-center gap-2 rounded-md border border-border bg-card px-3 py-3">
-          <LockKeyhole aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
-          <input
-            aria-describedby={state.fieldErrors.password ? "signup-password-error" : undefined}
-            aria-invalid={Boolean(state.fieldErrors.password)}
-            autoComplete="new-password"
-            className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
-            name="password"
-            placeholder="At least 8 characters"
-            type="password"
-          />
-        </span>
-        {state.fieldErrors.password ? (
-          <span className="mt-2 block text-sm text-coral" id="signup-password-error">
-            {state.fieldErrors.password}
-          </span>
-        ) : null}
-      </label>
+      <PasswordInputField
+        autoComplete="new-password"
+        error={state.fieldErrors.password}
+        errorId="signup-password-error"
+        label="Password"
+        name="password"
+        placeholder="At least 8 characters"
+      />
+      <PasswordInputField
+        autoComplete="new-password"
+        error={state.fieldErrors.confirmPassword}
+        errorId="signup-confirm-password-error"
+        label="Confirm password"
+        name="confirmPassword"
+        placeholder="Repeat your password"
+      />
       <AuthSubmitButton>Create account</AuthSubmitButton>
     </form>
   );

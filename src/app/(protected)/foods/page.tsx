@@ -30,7 +30,7 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
         description="Your reusable foods with nutrition values per 100 g."
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#59CF95] active:bg-[#3FBD7E]"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
             href="/foods/new"
           >
             <Plus aria-hidden="true" className="h-5 w-5" />
@@ -85,7 +85,7 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
           }
           action={
             <Link
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#59CF95]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995]"
               href="/foods/new"
             >
               <Plus aria-hidden="true" className="h-5 w-5" />

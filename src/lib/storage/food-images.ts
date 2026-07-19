@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 export const foodImagesBucket = "food-images";
-export const maxFoodImageSizeBytes = 2 * 1024 * 1024;
+export const maxFoodImageSizeBytes = 1024 * 1024;
 export const allowedFoodImageTypes = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export type FoodImageFile = Blob & {
@@ -32,7 +32,7 @@ export function validateFoodImage(file: FoodImageFile | null): FoodImageValidati
   }
 
   if (file.size > maxFoodImageSizeBytes) {
-    return { ok: false, error: "Images must be 2 MB or smaller." };
+    return { ok: false, error: "Images must be 1 MB or smaller." };
   }
 
   return { ok: true, file };

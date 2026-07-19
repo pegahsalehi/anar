@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Manrope } from "next/font/google";
 import "./globals.css";
+
+const manrope = Manrope({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-manrope",
+  weight: ["400", "500", "600"],
+});
 
 export const metadata: Metadata = {
   title: {
@@ -27,10 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FBFDFB" },
-    { media: "(prefers-color-scheme: dark)", color: "#FBFDFB" },
-  ],
+  themeColor: "#FFFCF7",
 };
 
 export default function RootLayout({
@@ -39,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html className={manrope.variable} lang="en" dir="ltr">
       <body>{children}</body>
     </html>
   );

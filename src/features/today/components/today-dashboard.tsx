@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { ImagePlus, Plus, Utensils, X } from "lucide-react";
 import { FoodImage } from "@/components/foods/food-image";
@@ -10,7 +11,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { DailySummary } from "@/components/nutrition/daily-summary";
 import { FoodLogItem } from "@/components/nutrition/food-log-item";
 import { StreakCard } from "@/components/nutrition/streak-card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { addFoodLogAction } from "@/features/today/actions";
 import {
   initialLogFoodMutationState,
@@ -40,7 +40,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         description="Track today's intake, review macro progress, and log favorite foods quickly."
         action={
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#59CF95] active:bg-[#3FBD7E]"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
             onClick={() => openLogDialog()}
             type="button"
           >
@@ -57,15 +57,13 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
       ) : null}
 
       <div className="space-y-4">
+        <StreakCard {...data.streak} />
         <DailySummary progress={data.progress} />
-        <div className="max-w-sm">
-          <StreakCard {...data.streak} />
-        </div>
       </div>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-base font-bold text-foreground">Today&apos;s foods</h2>
+          <h2 className="text-base font-semibold text-foreground">Today&apos;s foods</h2>
           <span className="text-sm text-muted-foreground">
             {data.logs.length} {data.logs.length === 1 ? "entry" : "entries"}
           </span>
@@ -77,12 +75,10 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
             ))}
           </div>
         ) : (
-          <EmptyState
-            title="Nothing logged yet"
-            description="Add the first food for today and your totals will update here."
+          <TodayEmptyStateCard
             action={
               <button
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#59CF95]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
                 onClick={() => openLogDialog()}
                 type="button"
               >
@@ -90,14 +86,17 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
                 Add food
               </button>
             }
+            title="Nothing logged yet"
+            description="Add the first food for today and your totals will update here."
+            illustrationSrc="/images/empty-states/healthy-food-bowl.png"
           />
         )}
       </section>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-base font-bold text-foreground">Quick access</h2>
-          <Link className="text-sm font-semibold text-primary hover:underline" href="/foods">
+          <h2 className="text-base font-semibold text-foreground">Quick access</h2>
+          <Link className="text-sm font-semibold text-foreground underline-offset-4 hover:text-coral hover:underline" href="/foods">
             Manage library
           </Link>
         </div>
@@ -105,7 +104,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {data.quickFoods.map((food) => (
               <button
-                className="flex min-h-20 items-center gap-3 rounded-md border border-border bg-card p-3 text-left text-sm shadow-sm transition hover:border-primary hover:bg-muted"
+                className="flex min-h-20 items-center gap-3 rounded-md border border-border bg-card p-3 text-left text-sm shadow-sm transition hover:border-primary/70 hover:bg-muted"
                 key={food.id}
                 onClick={() => openLogDialog(food.id)}
                 type="button"
@@ -114,7 +113,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
                   <FoodImage alt={`${food.name} image`} src={food.imageUrl} />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate font-bold text-card-foreground">
+                  <span className="block truncate font-medium text-card-foreground">
                     {food.name}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
@@ -125,18 +124,19 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
             ))}
           </div>
         ) : (
-          <EmptyState
-            title="Your library is empty"
-            description="Create reusable foods first, then log them here by grams."
+          <TodayEmptyStateCard
             action={
               <Link
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#59CF95]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
                 href="/foods/new"
               >
                 <ImagePlus aria-hidden="true" className="h-5 w-5" />
                 Create food
               </Link>
             }
+            title="Your library is empty"
+            description="Create reusable foods first, then log them here by grams."
+            illustrationSrc="/images/empty-states/nutrition-book.png"
           />
         )}
       </section>
@@ -148,6 +148,44 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         selectedFoodId={selectedFoodId}
       />
     </div>
+  );
+}
+
+function TodayEmptyStateCard({
+  action,
+  description,
+  illustrationSrc,
+  title,
+}: {
+  action: ReactNode;
+  description: string;
+  illustrationSrc: string;
+  title: string;
+}) {
+  return (
+    <section className="rounded-[24px] border border-border bg-card px-5 py-7 shadow-[0_18px_44px_rgb(16_42_67_/_0.06)] sm:px-8 lg:px-12 lg:py-10">
+      <div className="grid items-center gap-7 text-center sm:grid-cols-[13rem_1fr] sm:text-left lg:grid-cols-[15rem_1fr] lg:gap-10">
+        <div className="mx-auto flex h-48 w-48 items-center justify-center overflow-hidden rounded-[28px] bg-muted shadow-[0_12px_30px_rgb(16_42_67_/_0.06)] sm:mx-0 lg:h-56 lg:w-56">
+          <Image
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-contain"
+            height={1254}
+            src={illustrationSrc}
+            width={1254}
+          />
+        </div>
+        <div className="mx-auto max-w-xl sm:mx-0">
+          <h3 className="text-2xl font-semibold leading-tight text-card-foreground">
+            {title}
+          </h3>
+          <p className="mt-3 text-base leading-7 text-muted-foreground sm:text-lg">
+            {description}
+          </p>
+          <div className="mt-6 flex justify-center sm:justify-start">{action}</div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -204,7 +242,7 @@ function LogFoodDialog({
       <div className="w-full max-w-lg rounded-md border border-border bg-card p-5 shadow-soft">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-card-foreground">Log food</h2>
+            <h2 className="text-lg font-semibold text-card-foreground">Log food</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Select a saved food and enter how many grams you consumed.
             </p>
@@ -258,7 +296,7 @@ function LogFoodDialog({
                   <FoodImage alt={`${selectedFood.name} image`} src={selectedFood.imageUrl} />
                 </span>
                 <div className="min-w-0 text-sm">
-                  <p className="truncate font-bold text-card-foreground">{selectedFood.name}</p>
+                  <p className="truncate font-medium text-card-foreground">{selectedFood.name}</p>
                   <p className="mt-1 text-muted-foreground">
                     {formatCalories(selectedFood.calories_per_100g)} cal,{" "}
                     {formatDecimal(selectedFood.protein_per_100g)} g protein,{" "}
@@ -293,7 +331,7 @@ function LogFoodDialog({
 
         {foods.length === 0 ? (
           <Link
-            className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#59CF95]"
+            className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995]"
             href="/foods/new"
           >
             <Utensils aria-hidden="true" className="h-5 w-5" />
@@ -310,7 +348,7 @@ function LogFoodSubmitButton() {
 
   return (
     <button
-      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-soft transition hover:bg-[#59CF95] active:bg-[#3FBD7E] disabled:cursor-wait disabled:opacity-70"
+      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-wait disabled:opacity-70"
       disabled={pending}
       type="submit"
     >

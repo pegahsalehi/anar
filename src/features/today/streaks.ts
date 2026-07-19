@@ -1,8 +1,18 @@
-type LogDayStats = {
+export type LogDayStats = {
   currentStreak: number;
   longestStreak: number;
   activeDays: number;
+  weekDays: WeekDayActivity[];
 };
+
+export type WeekDayActivity = {
+  label: "M" | "T" | "W" | "F" | "S";
+  date: string;
+  isComplete: boolean;
+  isToday: boolean;
+};
+
+const weekDayLabels: WeekDayActivity["label"][] = ["M", "T", "W", "T", "F", "S", "S"];
 
 export function calculateLogDayStats(
   logDates: Array<string | null | undefined>,
@@ -36,11 +46,33 @@ export function calculateLogDayStats(
     currentStreak,
     longestStreak,
     activeDays: uniqueDates.size,
+    weekDays: buildWeekDays(uniqueDates, today),
   };
 }
 
 function previousISODate(value: string) {
+  return addISODays(value, -1);
+}
+
+function buildWeekDays(uniqueDates: Set<string>, today: string): WeekDayActivity[] {
+  const todayDate = new Date(`${today}T00:00:00.000Z`);
+  const mondayOffset = (todayDate.getUTCDay() + 6) % 7;
+  const monday = addISODays(today, -mondayOffset);
+
+  return weekDayLabels.map((label, index) => {
+    const date = addISODays(monday, index);
+
+    return {
+      label,
+      date,
+      isComplete: uniqueDates.has(date),
+      isToday: date === today,
+    };
+  });
+}
+
+function addISODays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() - 1);
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }

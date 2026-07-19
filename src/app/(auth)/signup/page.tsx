@@ -10,13 +10,16 @@ export default function SignupPage() {
   return (
     <section className="w-full">
       <AuthPageHeader
-        title="Start with Anar"
-        description="Create a private account and keep your food library separate from every other user."
+        title="Create your Anar account"
+        description="Start tracking your meals and daily nutrition in just a few steps."
       />
       <SignupForm />
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="mt-6 text-sm text-[#51685D]">
         Already have an account?{" "}
-        <Link className="font-medium text-primary hover:underline" href="/login">
+        <Link
+          className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
+          href="/login"
+        >
           Log in
         </Link>
       </p>

@@ -141,7 +141,10 @@ function validationError(error: z.ZodError): AuthActionState {
   error.issues.forEach((issue) => {
     const field = issue.path[0];
     if (
-      (field === "email" || field === "password" || field === "displayName") &&
+      (field === "email" ||
+        field === "password" ||
+        field === "confirmPassword" ||
+        field === "displayName") &&
       !fieldErrors[field]
     ) {
       fieldErrors[field] = issue.message;

@@ -13,6 +13,7 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
       kind: "calories" as const,
       label: "Calories",
       consumed: progress.calories.consumed,
+      minTarget: progress.calories.minTarget,
       target: progress.calories.target,
       unit: "calorie" as const,
     },
@@ -20,6 +21,7 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
       kind: "protein" as const,
       label: "Protein",
       consumed: progress.protein.consumed,
+      minTarget: progress.protein.minTarget,
       target: progress.protein.target,
       unit: "gram" as const,
     },
@@ -27,6 +29,7 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
       kind: "carbohydrates" as const,
       label: "Carbs",
       consumed: progress.carbohydrates.consumed,
+      minTarget: progress.carbohydrates.minTarget,
       target: progress.carbohydrates.target,
       unit: "gram" as const,
     },
@@ -34,6 +37,7 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
       kind: "fat" as const,
       label: "Fat",
       consumed: progress.fat.consumed,
+      minTarget: progress.fat.minTarget,
       target: progress.fat.target,
       unit: "gram" as const,
     },
@@ -42,7 +46,10 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
   return (
     <section
       aria-label="Daily nutrition summary"
-      className={cn("grid gap-4", compact ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2 xl:grid-cols-4")}
+      className={cn(
+        "grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4",
+        compact && "gap-4",
+      )}
     >
       {dailyProgress.map((item) => (
         <NutritionProgressCard key={item.kind} {...item} />

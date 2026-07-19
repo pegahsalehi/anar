@@ -19,16 +19,22 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <section className="w-full">
       <AuthPageHeader
-        title="Log in to Anar"
-        description="See today's progress, manage your food library, and review your private nutrition history."
+        title="Welcome back"
+        description="Log in to continue tracking your daily nutrition."
       />
       <LoginForm nextPath={getSafeRedirectPath(next)} />
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <Link className="font-medium text-primary hover:underline" href="/forgot-password">
+      <div className="mt-6 flex flex-col gap-3 text-sm text-[#51685D] sm:flex-row sm:items-center sm:justify-between">
+        <Link
+          className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
+          href="/forgot-password"
+        >
           Forgot password?
         </Link>
-        <Link className="font-medium text-primary hover:underline" href="/signup">
-          Create account
+        <Link
+          className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
+          href="/signup"
+        >
+          New to Anar? Create a free account
         </Link>
       </div>
     </section>

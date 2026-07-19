@@ -41,7 +41,7 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-card-foreground">Delete food?</h2>
+                <h2 className="text-lg font-semibold text-card-foreground">Delete food?</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   This will remove <strong className="text-foreground">{foodName}</strong> from
                   your library. Existing log snapshots will stay unchanged.

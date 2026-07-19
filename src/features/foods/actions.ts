@@ -10,7 +10,13 @@ import {
   removeFoodImage,
 } from "@/lib/storage/food-images";
 import { foodFormSchema, validateOptionalFoodImage } from "@/features/foods/schemas";
+import {
+  duplicateFoodNameMessage,
+  normalizeFoodNameForDuplicate,
+} from "@/features/foods/validation";
 import type { FoodMutationState } from "@/features/foods/types";
+
+type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
 export async function createFoodAction(
   _previousState: FoodMutationState,
@@ -30,6 +36,20 @@ export async function createFoodAction(
 
   if (!parsed.success || !imageValidation.ok) {
     return validationError(parsed.error, imageValidation.ok ? undefined : imageValidation.error);
+  }
+
+  const duplicateCheck = await hasDuplicateActiveFoodName(
+    supabase,
+    user.id,
+    parsed.data.name,
+  );
+
+  if (!duplicateCheck.ok) {
+    return mutationError("Food could not be saved. Please try again.");
+  }
+
+  if (duplicateCheck.isDuplicate) {
+    return duplicateFoodNameError();
   }
 
   let imagePath: string | null = null;
@@ -63,6 +83,11 @@ export async function createFoodAction(
 
   if (error) {
     await removeFoodImage(supabase, imagePath);
+
+    if (isDuplicateFoodNameError(error)) {
+      return duplicateFoodNameError();
+    }
+
     return mutationError("Food could not be saved. Please try again.");
   }
 
@@ -102,6 +127,21 @@ export async function updateFoodAction(
 
   if (loadError || !existingFood) {
     return mutationError("Food was not found.");
+  }
+
+  const duplicateCheck = await hasDuplicateActiveFoodName(
+    supabase,
+    user.id,
+    parsed.data.name,
+    foodId,
+  );
+
+  if (!duplicateCheck.ok) {
+    return mutationError("Food could not be updated. Please try again.");
+  }
+
+  if (duplicateCheck.isDuplicate) {
+    return duplicateFoodNameError();
   }
 
   let nextImagePath = existingFood.image_path;
@@ -145,6 +185,11 @@ export async function updateFoodAction(
 
   if (error) {
     await removeFoodImage(supabase, uploadedImagePath);
+
+    if (isDuplicateFoodNameError(error)) {
+      return duplicateFoodNameError();
+    }
+
     return mutationError("Food could not be updated. Please try again.");
   }
 
@@ -234,10 +279,52 @@ function validationError(
   };
 }
 
+async function hasDuplicateActiveFoodName(
+  supabase: ServerSupabaseClient,
+  userId: string,
+  name: string,
+  ignoredFoodId?: string,
+) {
+  const { data, error } = await supabase
+    .from("foods")
+    .select("id, name")
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+
+  if (error) {
+    return { ok: false as const };
+  }
+
+  const normalizedName = normalizeFoodNameForDuplicate(name);
+
+  return {
+    ok: true as const,
+    isDuplicate: (data ?? []).some(
+      (food) =>
+        food.id !== ignoredFoodId &&
+        normalizeFoodNameForDuplicate(food.name) === normalizedName,
+    ),
+  };
+}
+
+function duplicateFoodNameError(): FoodMutationState {
+  return {
+    status: "error",
+    message: "Please fix the highlighted fields.",
+    fieldErrors: {
+      name: duplicateFoodNameMessage,
+    },
+  };
+}
+
 function mutationError(message: string): FoodMutationState {
   return {
     status: "error",
     message,
     fieldErrors: {},
   };
+}
+
+function isDuplicateFoodNameError(error: { code?: string }) {
+  return error.code === "23505";
 }

@@ -30,11 +30,11 @@ export default async function ProfilePage() {
       />
       <section className="rounded-md border border-border bg-card p-5 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-md bg-muted text-primary">
+          <div className="flex h-20 w-20 items-center justify-center rounded-md bg-coral/10 text-coral">
             <UserRound aria-hidden="true" className="h-9 w-9" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold">{displayName}</h2>
+            <h2 className="text-lg font-semibold">{displayName}</h2>
             <dl className="mt-3 grid gap-2 text-sm text-muted-foreground">
               <div className="flex min-w-0 items-center gap-2">
                 <Mail aria-hidden="true" className="h-4 w-4 shrink-0" />

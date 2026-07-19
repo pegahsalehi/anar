@@ -6,17 +6,25 @@ export type NutritionValues = {
 };
 
 export type NutritionTargets = {
+  caloriesMinTarget: number;
   caloriesTarget: number;
+  proteinMinTarget: number;
   proteinTarget: number;
+  carbohydratesMinTarget: number;
   carbohydratesTarget: number;
+  fatMinTarget: number;
   fatTarget: number;
 };
 
 export type NutritionProgress = {
   consumed: number;
+  minTarget: number;
   target: number;
+  maxTarget: number;
+  remainingToMin: number;
   remaining: number;
   exceeded: number;
+  isWithinRange: boolean;
   ratio: number;
   clampedRatio: number;
 };
@@ -29,9 +37,13 @@ export type DailyNutritionProgress = {
 };
 
 export const defaultDailyGoals: NutritionTargets = {
+  caloriesMinTarget: 2000,
   caloriesTarget: 2000,
+  proteinMinTarget: 100,
   proteinTarget: 100,
+  carbohydratesMinTarget: 250,
   carbohydratesTarget: 250,
+  fatMinTarget: 70,
   fatTarget: 70,
 };
 
@@ -59,15 +71,24 @@ export function aggregateNutrition(values: NutritionValues[]): NutritionValues {
   );
 }
 
-export function calculateProgress(consumed: number, target: number): NutritionProgress {
-  const safeTarget = target > 0 ? target : 0;
-  const ratio = safeTarget > 0 ? consumed / safeTarget : 0;
+export function calculateProgress(
+  consumed: number,
+  target: number,
+  minTarget = target,
+): NutritionProgress {
+  const safeMinTarget = Math.max(minTarget, 0);
+  const safeMaxTarget = Math.max(target, safeMinTarget, 0);
+  const ratio = safeMaxTarget > 0 ? consumed / safeMaxTarget : 0;
 
   return {
     consumed,
-    target: safeTarget,
-    remaining: Math.max(safeTarget - consumed, 0),
-    exceeded: Math.max(consumed - safeTarget, 0),
+    minTarget: safeMinTarget,
+    target: safeMaxTarget,
+    maxTarget: safeMaxTarget,
+    remainingToMin: Math.max(safeMinTarget - consumed, 0),
+    remaining: Math.max(safeMaxTarget - consumed, 0),
+    exceeded: Math.max(consumed - safeMaxTarget, 0),
+    isWithinRange: consumed >= safeMinTarget && consumed <= safeMaxTarget,
     ratio,
     clampedRatio: Math.min(Math.max(ratio, 0), 1),
   };
@@ -78,12 +99,25 @@ export function progressFromTotals(
   targets: NutritionTargets,
 ): DailyNutritionProgress {
   return {
-    calories: calculateProgress(totals.calories, targets.caloriesTarget),
-    protein: calculateProgress(totals.protein, targets.proteinTarget),
+    calories: calculateProgress(
+      totals.calories,
+      targets.caloriesTarget,
+      targets.caloriesMinTarget,
+    ),
+    protein: calculateProgress(
+      totals.protein,
+      targets.proteinTarget,
+      targets.proteinMinTarget,
+    ),
     carbohydrates: calculateProgress(
       totals.carbohydrates,
       targets.carbohydratesTarget,
+      targets.carbohydratesMinTarget,
     ),
-    fat: calculateProgress(totals.fat, targets.fatTarget),
+    fat: calculateProgress(
+      totals.fat,
+      targets.fatTarget,
+      targets.fatMinTarget,
+    ),
   };
 }

@@ -12,16 +12,22 @@ export const loginSchema = z.object({
   next: z.string().optional(),
 });
 
-export const signupSchema = z.object({
-  displayName: z
-    .string()
-    .trim()
-    .max(80, "Display name must be 80 characters or fewer.")
-    .optional(),
-  email: emailSchema,
-  password: z.string().min(8, "Password must be at least 8 characters."),
-  timezone: z.string().trim().min(1).max(100).optional(),
-});
+export const signupSchema = z
+  .object({
+    displayName: z
+      .string()
+      .trim()
+      .min(1, "Enter your first name.")
+      .max(80, "First name must be 80 characters or fewer."),
+    email: emailSchema,
+    password: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(1, "Confirm your password."),
+    timezone: z.string().trim().min(1).max(100).optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
 
 export const forgotPasswordSchema = z.object({
   email: emailSchema,

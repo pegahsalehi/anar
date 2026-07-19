@@ -2,6 +2,7 @@ import type { FoodLogListItem } from "@/components/nutrition/food-log-item";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSignedImageUrlMap } from "@/lib/storage/food-images";
 import { formatTime } from "@/lib/format";
+import { addISODays, getLocalISODate } from "@/lib/dates";
 import {
   aggregateNutrition,
   calculateConsumedNutrition,
@@ -9,6 +10,12 @@ import {
   progressFromTotals,
   type DailyNutritionProgress,
 } from "@/lib/nutrition";
+import type { WeeklyProgressData } from "@/features/history/types";
+import {
+  buildWeeklyProgressData,
+  resolveHistoryWeekStart,
+} from "@/features/history/weekly-progress";
+import { calculateLogDayStats, type LogDayStats } from "@/features/today/streaks";
 import type { Database } from "@/types/database";
 
 type FoodLogRow = Database["public"]["Tables"]["food_logs"]["Row"];
@@ -19,41 +26,134 @@ type ProfileTimezoneRow = Pick<
 >;
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
-  "calories_target" | "protein_target" | "carbohydrates_target" | "fat_target"
+  | "calories_target"
+  | "protein_target"
+  | "carbohydrates_target"
+  | "fat_target"
+  | "calories_min"
+  | "calories_max"
+  | "protein_min"
+  | "protein_max"
+  | "carbohydrates_min"
+  | "carbohydrates_max"
+  | "fat_min"
+  | "fat_max"
+>;
+type WeeklyGoalRow = Pick<
+  Database["public"]["Tables"]["daily_goals"]["Row"],
+  | "effective_date"
+  | "calories_target"
+  | "protein_target"
+  | "carbohydrates_target"
+  | "fat_target"
+  | "calories_min"
+  | "calories_max"
+  | "protein_min"
+  | "protein_max"
+  | "carbohydrates_min"
+  | "carbohydrates_max"
+  | "fat_min"
+  | "fat_max"
+>;
+type WeeklyFoodLogRow = Pick<
+  FoodLogRow,
+  | "local_log_date"
+  | "consumed_grams"
+  | "calories_per_100g_snapshot"
+  | "protein_per_100g_snapshot"
+  | "carbohydrates_per_100g_snapshot"
+  | "fat_per_100g_snapshot"
 >;
 
 type HistoryDateData = {
   activeDates: string[];
+  streak: LogDayStats;
   logs: FoodLogListItem[];
   progress: DailyNutritionProgress;
   error: string | null;
 };
 
-export async function getHistoryActiveDates() {
+type HistoryActiveDatesData = {
+  activeDates: string[];
+  weeklyProgress: WeeklyProgressData;
+  streak: LogDayStats;
+  error: string | null;
+};
+
+export async function getHistoryActiveDates(
+  weekStart?: string,
+): Promise<HistoryActiveDatesData> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const empty = buildEmptyHistoryActiveDatesData(weekStart);
 
   if (!user) {
     return {
-      activeDates: [] as string[],
+      ...empty,
       error: "You must be signed in.",
     };
   }
 
-  const { data, error } = await supabase
-    .from("food_logs")
-    .select("local_log_date")
-    .eq("user_id", user.id)
-    .order("local_log_date", { ascending: false })
-    .limit(500);
+  const profileResult = await supabase
+    .from("profiles")
+    .select("timezone")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const profile = profileResult.data as ProfileTimezoneRow | null;
+  const timezone = profile?.timezone ?? "UTC";
+  const today = getLocalISODate(new Date(), timezone);
+  const resolvedWeekStart = resolveHistoryWeekStart(weekStart, today);
+  const weekEnd = addISODays(resolvedWeekStart, 6);
+
+  const [activeDatesResult, weeklyLogsResult, weeklyGoalsResult] = await Promise.all([
+    supabase
+      .from("food_logs")
+      .select("local_log_date")
+      .eq("user_id", user.id)
+      .order("local_log_date", { ascending: false })
+      .limit(500),
+    supabase
+      .from("food_logs")
+      .select(
+        "local_log_date, consumed_grams, calories_per_100g_snapshot, protein_per_100g_snapshot, carbohydrates_per_100g_snapshot, fat_per_100g_snapshot",
+      )
+      .eq("user_id", user.id)
+      .gte("local_log_date", resolvedWeekStart)
+      .lte("local_log_date", weekEnd),
+    supabase
+      .from("daily_goals")
+      .select(
+        "effective_date, calories_target, protein_target, carbohydrates_target, fat_target, calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
+      )
+      .eq("user_id", user.id)
+      .lte("effective_date", weekEnd)
+      .order("effective_date", { ascending: true }),
+  ]);
+
+  const activeDates = getUniqueActiveDates(activeDatesResult.data);
 
   return {
-    activeDates: Array.from(
-      new Set(((data ?? []) as LogDayRow[]).map((log) => log.local_log_date)),
+    activeDates,
+    weeklyProgress: buildWeeklyProgressData({
+      goals: (weeklyGoalsResult.data ?? []) as WeeklyGoalRow[],
+      logs: (weeklyLogsResult.data ?? []) as WeeklyFoodLogRow[],
+      today,
+      weekStart: resolvedWeekStart,
+    }),
+    streak: calculateLogDayStats(
+      activeDates,
+      today,
     ),
-    error: error ? "History dates could not be loaded." : null,
+    error:
+      profileResult.error ||
+      activeDatesResult.error ||
+      weeklyLogsResult.error ||
+      weeklyGoalsResult.error
+        ? "History dates could not be loaded."
+        : null,
   };
 }
 
@@ -82,7 +182,9 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
       .limit(500),
     supabase
       .from("daily_goals")
-      .select("calories_target, protein_target, carbohydrates_target, fat_target")
+      .select(
+        "calories_target, protein_target, carbohydrates_target, fat_target, calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
+      )
       .eq("user_id", user.id)
       .lte("effective_date", date)
       .order("effective_date", { ascending: false })
@@ -99,6 +201,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   const profile = profileResult.data as ProfileTimezoneRow | null;
   const goal = goalResult.data as GoalRow | null;
   const timezone = profile?.timezone ?? "UTC";
+  const activeDates = getUniqueActiveDates(activeDatesResult.data);
   const imageUrls = await createSignedImageUrlMap(
     supabase,
     ((logsResult.data ?? []) as FoodLogRow[]).map((log) => log.image_path_snapshot),
@@ -140,21 +243,20 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   );
   const goals = goal
     ? {
-        caloriesTarget: goal.calories_target,
-        proteinTarget: goal.protein_target,
-        carbohydratesTarget: goal.carbohydrates_target,
-        fatTarget: goal.fat_target,
+        caloriesMinTarget: goal.calories_min,
+        caloriesTarget: goal.calories_max,
+        proteinMinTarget: goal.protein_min,
+        proteinTarget: goal.protein_max,
+        carbohydratesMinTarget: goal.carbohydrates_min,
+        carbohydratesTarget: goal.carbohydrates_max,
+        fatMinTarget: goal.fat_min,
+        fatTarget: goal.fat_max,
       }
     : defaultDailyGoals;
 
   return {
-    activeDates: Array.from(
-      new Set(
-        ((activeDatesResult.data ?? []) as LogDayRow[]).map(
-          (log) => log.local_log_date,
-        ),
-      ),
-    ),
+    activeDates,
+    streak: calculateLogDayStats(activeDates, getLocalISODate(new Date(), timezone)),
     logs,
     progress: progressFromTotals(totals, goals),
     error:
@@ -164,9 +266,29 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   };
 }
 
-function buildEmptyHistoryDateData(): HistoryDateData {
+function buildEmptyHistoryActiveDatesData(weekStart?: string): HistoryActiveDatesData {
+  const today = getLocalISODate(new Date(), "UTC");
+  const resolvedWeekStart = resolveHistoryWeekStart(weekStart, today);
+
   return {
     activeDates: [],
+    weeklyProgress: buildWeeklyProgressData({
+      goals: [],
+      logs: [],
+      today,
+      weekStart: resolvedWeekStart,
+    }),
+    streak: calculateLogDayStats([], today),
+    error: null,
+  };
+}
+
+function buildEmptyHistoryDateData(): HistoryDateData {
+  const today = getLocalISODate(new Date(), "UTC");
+
+  return {
+    activeDates: [],
+    streak: calculateLogDayStats([], today),
     logs: [],
     progress: progressFromTotals(
       { calories: 0, protein: 0, carbohydrates: 0, fat: 0 },
@@ -174,4 +296,10 @@ function buildEmptyHistoryDateData(): HistoryDateData {
     ),
     error: null,
   };
+}
+
+function getUniqueActiveDates(rows: unknown) {
+  return Array.from(
+    new Set(((rows ?? []) as LogDayRow[]).map((log) => log.local_log_date)),
+  );
 }

@@ -1,12 +1,12 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
         background: "rgb(var(--background) / <alpha-value>)",
+        "background-alt": "rgb(var(--background-alt) / <alpha-value>)",
         foreground: "rgb(var(--foreground) / <alpha-value>)",
         card: "rgb(var(--card) / <alpha-value>)",
         "card-foreground": "rgb(var(--card-foreground) / <alpha-value>)",
@@ -22,7 +22,7 @@ const config: Config = {
         ring: "rgb(var(--ring) / <alpha-value>)",
       },
       boxShadow: {
-        soft: "0 16px 34px rgb(18 53 42 / 0.08)",
+        soft: "0 16px 34px rgb(16 42 67 / 0.08)",
       },
       borderRadius: {
         sm: "12px",
@@ -31,7 +31,7 @@ const config: Config = {
       fontFamily: {
         sans: [
           "var(--font-sans)",
-          "Inter",
+          "Manrope",
           "Segoe UI",
           "Arial",
           "sans-serif",

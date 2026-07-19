@@ -4,19 +4,22 @@ import {
   maxFoodImageSizeBytes,
   type FoodImageFile,
 } from "@/lib/storage/food-images";
+import { parseFoodNumberInput } from "@/features/foods/validation";
 
-const finiteNonnegativeNumber = z.preprocess((value) => {
-  if (typeof value !== "string") {
-    return value;
+const finiteNonnegativeNumber = z.unknown().transform((value, context) => {
+  const parsed = parseFoodNumberInput(value);
+
+  if (!parsed.ok) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: parsed.error,
+    });
+
+    return z.NEVER;
   }
 
-  const normalized = value.trim();
-  if (normalized.length === 0) {
-    return Number.NaN;
-  }
-
-  return Number(normalized);
-}, z.number().finite("Enter a valid number.").min(0, "Value cannot be negative."));
+  return parsed.value;
+});
 
 export const foodFormSchema = z.object({
   name: z
@@ -43,7 +46,7 @@ export function validateOptionalFoodImage(value: FormDataEntryValue | null) {
   }
 
   if (value.size > maxFoodImageSizeBytes) {
-    return { ok: false as const, error: "Images must be 2 MB or smaller." };
+    return { ok: false as const, error: "Images must be 1 MB or smaller." };
   }
 
   return { ok: true as const, file: value };

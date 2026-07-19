@@ -36,7 +36,7 @@ describe("food image storage helpers", () => {
 
     expect(validateFoodImage(file)).toEqual({
       ok: false,
-      error: "Images must be 2 MB or smaller.",
+      error: "Images must be 1 MB or smaller.",
     });
   });
 });

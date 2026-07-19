@@ -41,7 +41,18 @@ type ProfileTimezoneRow = Pick<
 >;
 type GoalRow = Pick<
   Database["public"]["Tables"]["daily_goals"]["Row"],
-  "calories_target" | "protein_target" | "carbohydrates_target" | "fat_target"
+  | "calories_target"
+  | "protein_target"
+  | "carbohydrates_target"
+  | "fat_target"
+  | "calories_min"
+  | "calories_max"
+  | "protein_min"
+  | "protein_max"
+  | "carbohydrates_min"
+  | "carbohydrates_max"
+  | "fat_min"
+  | "fat_max"
 >;
 
 export async function getTodayDashboardData(): Promise<TodayDashboardData> {
@@ -72,7 +83,9 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   const [goalResult, foodsResult, logsResult, logDaysResult] = await Promise.all([
     supabase
       .from("daily_goals")
-      .select("calories_target, protein_target, carbohydrates_target, fat_target")
+      .select(
+        "calories_target, protein_target, carbohydrates_target, fat_target, calories_min, calories_max, protein_min, protein_max, carbohydrates_min, carbohydrates_max, fat_min, fat_max",
+      )
       .eq("user_id", user.id)
       .lte("effective_date", localDate)
       .order("effective_date", { ascending: false })
@@ -102,14 +115,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   ]);
 
   const goal = goalResult.data as GoalRow | null;
-  const goals = goal
-    ? {
-        caloriesTarget: goal.calories_target,
-        proteinTarget: goal.protein_target,
-        carbohydratesTarget: goal.carbohydrates_target,
-        fatTarget: goal.fat_target,
-      }
-    : defaultDailyGoals;
+  const goals = goal ? getNutritionTargetsFromGoal(goal) : defaultDailyGoals;
 
   const foods = (foodsResult.data ?? []) as TodayFoodRow[];
   const logs = (logsResult.data ?? []) as FoodLogRow[];
@@ -187,6 +193,19 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   };
 }
 
+function getNutritionTargetsFromGoal(goal: GoalRow): NutritionTargets {
+  return {
+    caloriesMinTarget: goal.calories_min,
+    caloriesTarget: goal.calories_max,
+    proteinMinTarget: goal.protein_min,
+    proteinTarget: goal.protein_max,
+    carbohydratesMinTarget: goal.carbohydrates_min,
+    carbohydratesTarget: goal.carbohydrates_max,
+    fatMinTarget: goal.fat_min,
+    fatTarget: goal.fat_max,
+  };
+}
+
 function buildEmptyDashboardData(): TodayDashboardData {
   const goals: NutritionTargets = defaultDailyGoals;
   const totals = { calories: 0, protein: 0, carbohydrates: 0, fat: 0 };
@@ -202,9 +221,7 @@ function buildEmptyDashboardData(): TodayDashboardData {
     quickFoods: [],
     logs: [],
     streak: {
-      currentStreak: 0,
-      longestStreak: 0,
-      activeDays: 0,
+      ...calculateLogDayStats([], getLocalISODate(new Date(), "UTC")),
     },
     error: null,
   };

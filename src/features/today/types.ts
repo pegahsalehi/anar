@@ -1,4 +1,5 @@
 import type { FoodListItem } from "@/features/foods/types";
+import type { WeekDayActivity } from "@/features/today/streaks";
 import type {
   DailyNutritionProgress,
   NutritionTargets,
@@ -48,6 +49,7 @@ export type TodayDashboardData = {
     currentStreak: number;
     longestStreak: number;
     activeDays: number;
+    weekDays: WeekDayActivity[];
   };
   error: string | null;
 };

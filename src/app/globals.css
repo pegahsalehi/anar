@@ -4,41 +4,22 @@
 
 :root {
   color-scheme: light;
-  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
-  --background: 251 253 251;
-  --background-alt: 245 250 247;
-  --foreground: 27 41 35;
+  --font-sans: var(--font-manrope), Manrope, "Segoe UI", Arial, sans-serif;
+  --background: 255 252 247;
+  --background-alt: 255 255 255;
+  --foreground: 16 42 67;
   --card: 255 255 255;
-  --card-foreground: 27 41 35;
-  --border: 220 233 225;
-  --muted: 236 248 241;
-  --muted-foreground: 104 119 111;
-  --primary: 114 227 173;
-  --primary-foreground: 18 53 42;
-  --coral: 222 38 36;
+  --card-foreground: 16 42 67;
+  --border: 232 237 233;
+  --muted: 255 244 241;
+  --muted-foreground: 102 120 138;
+  --primary: 85 220 164;
+  --primary-foreground: 16 42 67;
+  --coral: 244 63 94;
   --coral-foreground: 255 255 255;
-  --fresh: 63 189 126;
-  --fresh-foreground: 18 53 42;
-  --ring: 63 189 126;
-}
-
-.dark {
-  color-scheme: light;
-  --background: 251 253 251;
-  --background-alt: 245 250 247;
-  --foreground: 27 41 35;
-  --card: 255 255 255;
-  --card-foreground: 27 41 35;
-  --border: 220 233 225;
-  --muted: 236 248 241;
-  --muted-foreground: 104 119 111;
-  --primary: 114 227 173;
-  --primary-foreground: 18 53 42;
-  --coral: 222 38 36;
-  --coral-foreground: 255 255 255;
-  --fresh: 63 189 126;
-  --fresh-foreground: 18 53 42;
-  --ring: 63 189 126;
+  --fresh: 85 220 164;
+  --fresh-foreground: 16 42 67;
+  --ring: 85 220 164;
 }
 
 * {

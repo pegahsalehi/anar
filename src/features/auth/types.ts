@@ -1,4 +1,6 @@
-export type AuthFieldErrors = Partial<Record<"email" | "password" | "displayName", string>>;
+export type AuthFieldErrors = Partial<
+  Record<"email" | "password" | "confirmPassword" | "displayName", string>
+>;
 
 export type AuthActionState = {
   status: "idle" | "error" | "success";

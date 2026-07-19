@@ -24,21 +24,34 @@ describe("nutrition helpers", () => {
     expect(totals).toEqual({ calories: 250, protein: 10, carbohydrates: 32, fat: 9 });
     expect(
       progressFromTotals(totals, {
+        caloriesMinTarget: 150,
         caloriesTarget: 200,
+        proteinMinTarget: 15,
         proteinTarget: 20,
+        carbohydratesMinTarget: 30,
         carbohydratesTarget: 40,
+        fatMinTarget: 8,
         fatTarget: 10,
       }),
     ).toMatchObject({
-      calories: { consumed: 250, target: 200, exceeded: 50, clampedRatio: 1 },
-      protein: { consumed: 10, target: 20, remaining: 10, clampedRatio: 0.5 },
+      calories: { consumed: 250, minTarget: 150, target: 200, exceeded: 50, clampedRatio: 1 },
+      protein: {
+        consumed: 10,
+        minTarget: 15,
+        target: 20,
+        remainingToMin: 5,
+        remaining: 10,
+        clampedRatio: 0.5,
+      },
       carbohydrates: {
         consumed: 32,
+        minTarget: 30,
         target: 40,
         remaining: 8,
+        isWithinRange: true,
         clampedRatio: 0.8,
       },
-      fat: { consumed: 9, target: 10, remaining: 1, clampedRatio: 0.9 },
+      fat: { consumed: 9, minTarget: 8, target: 10, remaining: 1, clampedRatio: 0.9 },
     });
   });
 });

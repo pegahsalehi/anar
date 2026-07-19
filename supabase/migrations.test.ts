@@ -29,6 +29,24 @@ const fatMigration = fs.readFileSync(
   ),
   "utf8",
 );
+const duplicateFoodNameMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260719133000_add_active_food_name_unique_index.sql",
+  ),
+  "utf8",
+);
+const dailyGoalRangesMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260719152000_add_daily_goal_ranges.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase migrations", () => {
   it("grant app-owned tables only to authenticated", () => {
@@ -59,6 +77,18 @@ describe("Supabase migrations", () => {
     expect(fatMigration).not.toMatch(
       /grant\s+.+\s+on\s+table\s+public\.(daily_goals|foods|food_logs)\s+to\s+anon/i,
     );
+    expect(duplicateFoodNameMigration).toContain(
+      "grant select, insert, update on table public.foods to authenticated;",
+    );
+    expect(duplicateFoodNameMigration).not.toMatch(
+      /grant\s+.+\s+on\s+table\s+public\.foods\s+to\s+anon/i,
+    );
+    expect(dailyGoalRangesMigration).toContain(
+      "grant select, insert, update on table public.daily_goals to authenticated;",
+    );
+    expect(dailyGoalRangesMigration).not.toMatch(
+      /grant\s+.+\s+on\s+table\s+public\.daily_goals\s+to\s+anon/i,
+    );
   });
 
   it("keeps strict owner RLS policies and private storage policies", () => {
@@ -82,5 +112,31 @@ describe("Supabase migrations", () => {
     expect(fatMigration).toContain("daily_goals_positive_fat");
     expect(fatMigration).toContain("foods_nonnegative_fat");
     expect(fatMigration).toContain("food_logs_nonnegative_fat");
+  });
+
+  it("prevents duplicate active food names per user", () => {
+    expect(duplicateFoodNameMigration).toContain("create unique index if not exists");
+    expect(duplicateFoodNameMigration).toContain("foods_user_active_name_unique_idx");
+    expect(duplicateFoodNameMigration).toContain("on public.foods (user_id, lower(btrim(name)))");
+    expect(duplicateFoodNameMigration).toContain("where deleted_at is null");
+  });
+
+  it("adds daily goal ranges with nonnegative and ordered constraints", () => {
+    expect(dailyGoalRangesMigration).toContain("add column if not exists calories_min");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists calories_max");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists protein_min");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists protein_max");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists carbohydrates_min");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists carbohydrates_max");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists fat_min");
+    expect(dailyGoalRangesMigration).toContain("add column if not exists fat_max");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_calories_range");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_protein_range");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_carbohydrates_range");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_nonnegative_fat_range");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_calories_range_order");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_protein_range_order");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_carbohydrates_range_order");
+    expect(dailyGoalRangesMigration).toContain("daily_goals_fat_range_order");
   });
 });

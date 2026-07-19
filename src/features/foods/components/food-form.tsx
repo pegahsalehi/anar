@@ -1,11 +1,25 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useFormStatus } from "react-dom";
 import { useForm } from "react-hook-form";
 import { Heart, ImagePlus, Save, X } from "lucide-react";
 import type { FoodFormValues, FoodMutationState, FoodRow } from "@/features/foods/types";
 import { initialFoodMutationState } from "@/features/foods/types";
+import {
+  formatFoodImageFileSize,
+  prepareFoodImageForUpload,
+} from "@/features/foods/image-processing";
+import { getFoodNumberValidationError } from "@/features/foods/validation";
 import { cn } from "@/lib/utils";
 
 type FoodFormAction = (
@@ -24,10 +38,29 @@ type RegisteredFoodFormValues = FoodFormValues & {
   image: FileList;
 };
 
+type NutritionFieldName =
+  | "caloriesPer100g"
+  | "proteinPer100g"
+  | "carbohydratesPer100g"
+  | "fatPer100g";
+
+type ImageProcessingState =
+  | { status: "idle" }
+  | { status: "processing" }
+  | { status: "ready"; fileSize: number; wasCompressed: boolean };
+
+type FoodFieldErrorName = keyof FoodMutationState["fieldErrors"];
+
 export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps) {
   const [state, formAction] = useActionState(action, initialFoodMutationState);
   const [imageAction, setImageAction] = useState<"keep" | "remove" | "replace">("keep");
   const [previewUrl, setPreviewUrl] = useState<string | null>(imageUrl ?? null);
+  const [clientFieldErrors, setClientFieldErrors] = useState<FoodMutationState["fieldErrors"]>(
+    {},
+  );
+  const [imageProcessing, setImageProcessing] = useState<ImageProcessingState>({
+    status: "idle",
+  });
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const { register, resetField, watch } = useForm<RegisteredFoodFormValues>({
     defaultValues: {
@@ -42,22 +75,101 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
   });
 
   const imageRegistration = register("image");
+  const caloriesRegistration = register("caloriesPer100g");
+  const proteinRegistration = register("proteinPer100g");
+  const carbohydratesRegistration = register("carbohydratesPer100g");
+  const fatRegistration = register("fatPer100g");
   const selectedFiles = watch("image");
   const selectedFile = selectedFiles?.[0] ?? null;
+  const title = useMemo(() => (food ? "Edit food" : "Create food"), [food]);
+
+  const resetImageSelection = useCallback(() => {
+    resetField("image");
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+    setPreviewUrl(imageUrl ?? null);
+    setImageAction("keep");
+  }, [imageUrl, resetField]);
+
+  const replaceImageInputFile = useCallback((file: File) => {
+    if (!imageInputRef.current) {
+      return;
+    }
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    imageInputRef.current.files = dataTransfer.files;
+  }, []);
 
   useEffect(() => {
     if (!selectedFile) {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setPreviewUrl(objectUrl);
-    setImageAction("replace");
+    let isCurrentSelection = true;
+    let objectUrl: string | null = null;
 
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedFile]);
+    setImageProcessing({ status: "processing" });
+    setClientFieldErrors((currentErrors) => removeFieldError(currentErrors, "image"));
 
-  const title = useMemo(() => (food ? "Edit food" : "Create food"), [food]);
+    async function prepareSelectedImage() {
+      try {
+        const result = await prepareFoodImageForUpload(selectedFile);
+
+        if (!isCurrentSelection) {
+          return;
+        }
+
+        if (!result.ok) {
+          resetImageSelection();
+          setClientFieldErrors((currentErrors) => ({
+            ...currentErrors,
+            image: result.error,
+          }));
+          setImageProcessing({ status: "idle" });
+          return;
+        }
+
+        if (result.file !== selectedFile) {
+          replaceImageInputFile(result.file);
+        }
+
+        objectUrl = URL.createObjectURL(result.file);
+        setPreviewUrl(objectUrl);
+        setImageAction("replace");
+        setImageProcessing({
+          status: "ready",
+          fileSize: result.file.size,
+          wasCompressed: result.wasCompressed,
+        });
+      } catch (error) {
+        if (!isCurrentSelection) {
+          return;
+        }
+
+        resetImageSelection();
+        setClientFieldErrors((currentErrors) => ({
+          ...currentErrors,
+          image:
+            error instanceof Error
+              ? error.message
+              : "Image could not be prepared. Please choose another image.",
+        }));
+        setImageProcessing({ status: "idle" });
+      }
+    }
+
+    prepareSelectedImage();
+
+    return () => {
+      isCurrentSelection = false;
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [replaceImageInputFile, resetImageSelection, selectedFile]);
 
   function removeImage() {
     resetField("image");
@@ -65,11 +177,60 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
       imageInputRef.current.value = "";
     }
     setPreviewUrl(null);
+    setImageProcessing({ status: "idle" });
+    setClientFieldErrors((currentErrors) => removeFieldError(currentErrors, "image"));
     setImageAction(food?.image_path ? "remove" : "keep");
   }
 
+  function validateClientForm(event: FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget);
+    const nextErrors: FoodMutationState["fieldErrors"] = {};
+
+    validateNutritionField(nextErrors, "caloriesPer100g", formData.get("caloriesPer100g"));
+    validateNutritionField(nextErrors, "proteinPer100g", formData.get("proteinPer100g"));
+    validateNutritionField(
+      nextErrors,
+      "carbohydratesPer100g",
+      formData.get("carbohydratesPer100g"),
+    );
+    validateNutritionField(nextErrors, "fatPer100g", formData.get("fatPer100g"));
+
+    if (imageProcessing.status === "processing") {
+      nextErrors.image = "Image is still being prepared. Please wait.";
+    }
+
+    setClientFieldErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      event.preventDefault();
+    }
+  }
+
+  function handleNutritionInputChange(
+    field: NutritionFieldName,
+    event: ChangeEvent<HTMLInputElement>,
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void,
+  ) {
+    onChange(event);
+
+    const error = getFoodNumberValidationError(event.currentTarget.value);
+    setClientFieldErrors((currentErrors) =>
+      error
+        ? { ...currentErrors, [field]: error }
+        : removeFieldError(currentErrors, field),
+    );
+  }
+
+  function getFieldError(field: FoodFieldErrorName) {
+    return clientFieldErrors[field] ?? state.fieldErrors[field];
+  }
+
   return (
-    <form action={formAction} className="grid gap-5 rounded-md border border-border bg-card p-5 shadow-sm">
+    <form
+      action={formAction}
+      className="grid gap-5 rounded-md border border-border bg-card p-5 shadow-sm"
+      onSubmit={validateClientForm}
+    >
       <input name="imageAction" type="hidden" value={imageAction} />
       {state.message ? (
         <p className="rounded-md bg-coral/10 px-3 py-2 text-sm text-coral" role="alert">
@@ -85,7 +246,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
                 <ImagePlus aria-hidden="true" className="h-9 w-9 text-fresh" />
-                <span className="text-sm font-semibold">No image selected</span>
+                <span className="text-sm font-medium">No image selected</span>
               </div>
             )}
           </div>
@@ -99,6 +260,10 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
                 className="sr-only"
                 onChange={(event) => {
                   imageRegistration.onChange(event);
+                  setImageProcessing({ status: "idle" });
+                  setClientFieldErrors((currentErrors) =>
+                    removeFieldError(currentErrors, "image"),
+                  );
                 }}
                 ref={(element) => {
                   imageRegistration.ref(element);
@@ -119,17 +284,26 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             ) : null}
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            JPEG, PNG, or WebP. Maximum size: 2 MB.
+            JPEG, PNG, or WebP. Images over 1 MB are resized before upload.
           </p>
-          {state.fieldErrors.image ? (
+          {imageProcessing.status === "processing" ? (
+            <p className="text-xs leading-5 text-muted-foreground">Preparing image...</p>
+          ) : null}
+          {imageProcessing.status === "ready" ? (
+            <p className="text-xs leading-5 text-muted-foreground">
+              {imageProcessing.wasCompressed ? "Resized preview" : "Selected image"} - Final
+              size: {formatFoodImageFileSize(imageProcessing.fileSize)}
+            </p>
+          ) : null}
+          {getFieldError("image") ? (
             <p className="text-sm text-coral" role="alert">
-              {state.fieldErrors.image}
+              {getFieldError("image")}
             </p>
           ) : null}
         </div>
 
         <div className="grid gap-4">
-          <FieldError message={state.fieldErrors.name}>
+          <FieldError message={getFieldError("name")}>
             <label className="block">
               <span className="text-sm font-semibold">Food name</span>
               <input
@@ -141,51 +315,83 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             </label>
           </FieldError>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <FieldError message={state.fieldErrors.caloriesPer100g}>
+            <FieldError message={getFieldError("caloriesPer100g")}>
               <label className="block">
                 <span className="text-sm font-semibold">Calories per 100 g</span>
                 <input
+                  {...caloriesRegistration}
+                  aria-invalid={Boolean(getFieldError("caloriesPer100g"))}
                   className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
                   inputMode="decimal"
+                  onChange={(event) =>
+                    handleNutritionInputChange(
+                      "caloriesPer100g",
+                      event,
+                      caloriesRegistration.onChange,
+                    )
+                  }
                   placeholder="654"
                   type="text"
-                  {...register("caloriesPer100g")}
                 />
               </label>
             </FieldError>
-            <FieldError message={state.fieldErrors.proteinPer100g}>
+            <FieldError message={getFieldError("proteinPer100g")}>
               <label className="block">
                 <span className="text-sm font-semibold">Protein</span>
                 <input
+                  {...proteinRegistration}
+                  aria-invalid={Boolean(getFieldError("proteinPer100g"))}
                   className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
                   inputMode="decimal"
+                  onChange={(event) =>
+                    handleNutritionInputChange(
+                      "proteinPer100g",
+                      event,
+                      proteinRegistration.onChange,
+                    )
+                  }
                   placeholder="15.2"
                   type="text"
-                  {...register("proteinPer100g")}
                 />
               </label>
             </FieldError>
-            <FieldError message={state.fieldErrors.carbohydratesPer100g}>
+            <FieldError message={getFieldError("carbohydratesPer100g")}>
               <label className="block">
                 <span className="text-sm font-semibold">Carbohydrates</span>
                 <input
+                  {...carbohydratesRegistration}
+                  aria-invalid={Boolean(getFieldError("carbohydratesPer100g"))}
                   className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
                   inputMode="decimal"
+                  onChange={(event) =>
+                    handleNutritionInputChange(
+                      "carbohydratesPer100g",
+                      event,
+                      carbohydratesRegistration.onChange,
+                    )
+                  }
                   placeholder="13.7"
                   type="text"
-                  {...register("carbohydratesPer100g")}
                 />
               </label>
             </FieldError>
-            <FieldError message={state.fieldErrors.fatPer100g}>
+            <FieldError message={getFieldError("fatPer100g")}>
               <label className="block">
                 <span className="text-sm font-semibold">Fat</span>
                 <input
+                  {...fatRegistration}
+                  aria-invalid={Boolean(getFieldError("fatPer100g"))}
                   className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
                   inputMode="decimal"
+                  onChange={(event) =>
+                    handleNutritionInputChange(
+                      "fatPer100g",
+                      event,
+                      fatRegistration.onChange,
+                    )
+                  }
                   placeholder="65.2"
                   type="text"
-                  {...register("fatPer100g")}
                 />
               </label>
             </FieldError>
@@ -197,7 +403,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               Mark as favorite
             </span>
           </label>
-          <FieldError message={state.fieldErrors.notes}>
+          <FieldError message={getFieldError("notes")}>
             <label className="block">
               <span className="text-sm font-semibold">Notes</span>
               <textarea
@@ -210,7 +416,9 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
         </div>
       </div>
       <div className="flex justify-end">
-        <SubmitButton>{submitLabel}</SubmitButton>
+        <SubmitButton disabled={imageProcessing.status === "processing"}>
+          {submitLabel}
+        </SubmitButton>
       </div>
     </form>
   );
@@ -235,20 +443,47 @@ function FieldError({
   );
 }
 
-function SubmitButton({ children }: { children: React.ReactNode }) {
+function SubmitButton({
+  children,
+  disabled = false,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
 
   return (
     <button
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-soft transition",
-        "hover:bg-[#59CF95] active:bg-[#3FBD7E] disabled:cursor-wait disabled:opacity-70",
+        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition",
+        "hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-wait disabled:opacity-70",
       )}
-      disabled={pending}
+      disabled={pending || disabled}
       type="submit"
     >
       <Save aria-hidden="true" className="h-5 w-5" />
       {pending ? "Saving..." : children}
     </button>
   );
+}
+
+function validateNutritionField(
+  errors: FoodMutationState["fieldErrors"],
+  field: NutritionFieldName,
+  value: FormDataEntryValue | null,
+) {
+  const error = getFoodNumberValidationError(value);
+
+  if (error) {
+    errors[field] = error;
+  }
+}
+
+function removeFieldError(
+  errors: FoodMutationState["fieldErrors"],
+  field: FoodFieldErrorName,
+) {
+  const nextErrors = { ...errors };
+  delete nextErrors[field];
+  return nextErrors;
 }

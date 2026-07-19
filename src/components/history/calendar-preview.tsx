@@ -28,10 +28,10 @@ export function CalendarPreview({
   return (
     <section className="rounded-md border border-border bg-card p-5 shadow-sm">
       <div>
-        <h2 className="font-bold text-card-foreground">{monthLabel}</h2>
+        <h2 className="font-semibold text-card-foreground">{monthLabel}</h2>
         {selectedDate ? <p className="mt-1 text-xs text-muted-foreground">{selectedDate}</p> : null}
       </div>
-      <div className="mt-5 grid grid-cols-7 gap-2 text-center text-xs font-bold text-muted-foreground">
+      <div className="mt-5 grid grid-cols-7 gap-2 text-center text-xs font-medium text-muted-foreground">
         {weekDays.map((day) => (
           <div key={day}>{day}</div>
         ))}
