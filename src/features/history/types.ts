@@ -1,4 +1,5 @@
 export type WeeklyProgressMetric = "calories" | "protein" | "carbohydrates" | "fat";
+export type WeeklyProgressRangeStatus = "below" | "inside" | "above";
 
 export type WeeklyProgressMetricValue = {
   consumed: number;
@@ -6,6 +7,7 @@ export type WeeklyProgressMetricValue = {
   target: number;
   maxTarget: number;
   completionRatio: number;
+  rangeStatus: WeeklyProgressRangeStatus;
 };
 
 export type WeeklyProgressDay = {

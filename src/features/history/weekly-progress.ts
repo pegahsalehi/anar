@@ -14,6 +14,7 @@ import {
 import type {
   WeeklyProgressData,
   WeeklyProgressDay,
+  WeeklyProgressMetricValue,
 } from "@/features/history/types";
 
 type WeeklyFoodLog = {
@@ -151,9 +152,15 @@ function getTargetsForDate(goals: WeeklyGoal[], date: string): NutritionTargets 
   return targets;
 }
 
-function buildMetricValue(consumed: number, minTarget: number, maxTarget: number) {
+function buildMetricValue(
+  consumed: number,
+  minTarget: number,
+  maxTarget: number,
+): WeeklyProgressMetricValue {
   const safeMinTarget = Math.max(minTarget, 0);
   const safeMaxTarget = Math.max(maxTarget, safeMinTarget, 0);
+  const rangeStatus =
+    consumed < safeMinTarget ? "below" : consumed > safeMaxTarget ? "above" : "inside";
 
   return {
     consumed,
@@ -161,6 +168,7 @@ function buildMetricValue(consumed: number, minTarget: number, maxTarget: number
     target: safeMaxTarget,
     maxTarget: safeMaxTarget,
     completionRatio: safeMaxTarget > 0 ? consumed / safeMaxTarget : 0,
+    rangeStatus,
   };
 }
 

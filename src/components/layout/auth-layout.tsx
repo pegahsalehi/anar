@@ -2,10 +2,6 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChartNoAxesColumnIncreasing, ShieldCheck, Timer } from "lucide-react";
 import { AnarLogo } from "@/components/brand/anar-logo";
-import {
-  AuthCardSeedDecorations,
-  AuthPageSeedDecorations,
-} from "@/components/layout/auth-seed-decorations";
 
 const benefits: Array<{ title: string; icon: LucideIcon }> = [
   {
@@ -24,8 +20,11 @@ const benefits: Array<{ title: string; icon: LucideIcon }> = [
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#FBFDFB] px-4 py-5 text-[#12352A] sm:px-8">
-      <AuthPageSeedDecorations />
+    <main className="relative min-h-screen overflow-hidden bg-white px-4 py-5 text-[#12352A] sm:px-8">
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 bg-[url('/images/auth/anar-auth-background.png')] bg-cover bg-[position:76%_center] bg-no-repeat sm:bg-center"
+      />
       <div className="relative mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-6xl flex-col">
         <div className="grid flex-1 items-center gap-8 py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,28rem)] lg:gap-16">
           <section className="relative hidden min-h-[34rem] max-w-xl flex-col justify-center lg:flex">
@@ -49,9 +48,8 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           </section>
           <section
             aria-label="Authentication form"
-            className="relative mx-auto w-full max-w-md overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-6 shadow-[0_24px_70px_rgb(18_53_42_/_0.10)] sm:p-8"
+            className="relative mx-auto w-full max-w-md overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-6 shadow-[0_24px_70px_rgb(18_53_42_/_0.12)] sm:p-8"
           >
-            <AuthCardSeedDecorations />
             <div className="relative z-10">
               <AnarLogo className="mb-8 w-full" href="/login" variant="auth" />
               {children}

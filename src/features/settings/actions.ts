@@ -11,9 +11,20 @@ import type {
   ChangePasswordField,
   DailyGoalRangeActionState,
   DailyGoalRangeField,
+  DailyGoalRangeValues,
 } from "@/features/settings/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getLocalISODate } from "@/lib/dates";
+import type { Database } from "@/types/database";
+
+type DailyGoalInsert = Database["public"]["Tables"]["daily_goals"]["Insert"];
+type DailyGoalUpdate = Database["public"]["Tables"]["daily_goals"]["Update"];
+type SupabaseErrorLike = {
+  code?: string;
+  details?: string | null;
+  hint?: string | null;
+  message?: string;
+};
 
 export async function saveDailyGoalRangesAction(
   _previousState: DailyGoalRangeActionState,
@@ -28,9 +39,20 @@ export async function saveDailyGoalRangesAction(
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
+  if (authError) {
+    logSupabaseError("auth.getUser failed while saving daily goals", authError);
+    return {
+      status: "error",
+      message: "Your session could not be verified. Please log in again.",
+      fieldErrors: {},
+    };
+  }
+
   if (!user) {
+    console.warn("[settings:saveDailyGoalRanges] No authenticated user session was available.");
     return {
       status: "error",
       message: "You must be signed in to update daily goals.",
@@ -38,39 +60,70 @@ export async function saveDailyGoalRangesAction(
     };
   }
 
-  const { data: profile } = await supabase
+  console.info("[settings:saveDailyGoalRanges] Authenticated user session confirmed.", {
+    userId: user.id,
+  });
+
+  const profileResult = await supabase
     .from("profiles")
     .select("timezone")
     .eq("id", user.id)
     .maybeSingle();
-  const effectiveDate = getLocalISODate(new Date(), profile?.timezone ?? "UTC");
 
-  const { error } = await supabase.from("daily_goals").upsert(
-    {
-      user_id: user.id,
-      effective_date: effectiveDate,
-      calories_target: parsed.data.caloriesMax,
-      protein_target: parsed.data.proteinMax,
-      carbohydrates_target: parsed.data.carbohydratesMax,
-      fat_target: parsed.data.fatMax,
-      calories_min: parsed.data.caloriesMin,
-      calories_max: parsed.data.caloriesMax,
-      protein_min: parsed.data.proteinMin,
-      protein_max: parsed.data.proteinMax,
-      carbohydrates_min: parsed.data.carbohydratesMin,
-      carbohydrates_max: parsed.data.carbohydratesMax,
-      fat_min: parsed.data.fatMin,
-      fat_max: parsed.data.fatMax,
-    },
-    {
-      onConflict: "user_id,effective_date",
-    },
-  );
-
-  if (error) {
+  if (profileResult.error) {
+    logSupabaseError("profiles.select failed while saving daily goals", profileResult.error, {
+      userId: user.id,
+    });
     return {
       status: "error",
-      message: "Daily goals could not be saved. Please try again.",
+      message: getDailyGoalSaveErrorMessage(profileResult.error),
+      fieldErrors: {},
+    };
+  }
+
+  const effectiveDate = getLocalISODate(new Date(), profileResult.data?.timezone ?? "UTC");
+  const goalValues = buildDailyGoalValues(parsed.data);
+  const goalLookupResult = await supabase
+    .from("daily_goals")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("effective_date", effectiveDate)
+    .limit(1)
+    .maybeSingle();
+
+  if (goalLookupResult.error) {
+    logSupabaseError("daily_goals.select failed before saving daily goals", goalLookupResult.error, {
+      effectiveDate,
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: getDailyGoalSaveErrorMessage(goalLookupResult.error),
+      fieldErrors: {},
+    };
+  }
+
+  const saveResult = goalLookupResult.data?.id
+    ? await supabase
+        .from("daily_goals")
+        .update(goalValues satisfies DailyGoalUpdate)
+        .eq("id", goalLookupResult.data.id)
+        .eq("user_id", user.id)
+    : await supabase.from("daily_goals").insert({
+        ...goalValues,
+        user_id: user.id,
+        effective_date: effectiveDate,
+      } satisfies DailyGoalInsert);
+
+  if (saveResult.error) {
+    logSupabaseError("daily_goals.save failed", saveResult.error, {
+      effectiveDate,
+      operation: goalLookupResult.data?.id ? "update" : "insert",
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: getDailyGoalSaveErrorMessage(saveResult.error),
       fieldErrors: {},
     };
   }
@@ -83,6 +136,23 @@ export async function saveDailyGoalRangesAction(
     status: "success",
     message: "Daily goal ranges saved.",
     fieldErrors: {},
+  };
+}
+
+function buildDailyGoalValues(values: DailyGoalRangeValues) {
+  return {
+    calories_target: values.caloriesMax,
+    protein_target: values.proteinMax,
+    carbohydrates_target: values.carbohydratesMax,
+    fat_target: values.fatMax,
+    calories_min: values.caloriesMin,
+    calories_max: values.caloriesMax,
+    protein_min: values.proteinMin,
+    protein_max: values.proteinMax,
+    carbohydrates_min: values.carbohydratesMin,
+    carbohydrates_max: values.carbohydratesMax,
+    fat_min: values.fatMin,
+    fat_max: values.fatMax,
   };
 }
 
@@ -145,6 +215,43 @@ export async function changePasswordAction(
 
 function readFormData(formData: FormData) {
   return Object.fromEntries(formData.entries());
+}
+
+function logSupabaseError(
+  context: string,
+  error: SupabaseErrorLike,
+  metadata: Record<string, string> = {},
+) {
+  console.error(`[settings:saveDailyGoalRanges] ${context}`, {
+    code: error.code ?? null,
+    details: error.details ?? null,
+    hint: error.hint ?? null,
+    message: error.message ?? null,
+    ...metadata,
+  });
+}
+
+function getDailyGoalSaveErrorMessage(error: SupabaseErrorLike) {
+  const code = error.code ?? "";
+  const message = error.message?.toLowerCase() ?? "";
+
+  if (code === "42703" || message.includes("does not exist")) {
+    return "Daily goal range columns are missing in Supabase. Apply the latest migration, then try again.";
+  }
+
+  if (code === "42501" || message.includes("permission denied")) {
+    return "You do not have permission to save daily goals for this account.";
+  }
+
+  if (code === "23514" || message.includes("check constraint")) {
+    return "Please enter non-negative goal ranges where each minimum is not greater than its maximum.";
+  }
+
+  if (code === "23505" || message.includes("duplicate key")) {
+    return "A goal range already exists for this date. Refresh the page and try again.";
+  }
+
+  return "Daily goal ranges could not be saved because Supabase rejected the request. Check the server logs for details.";
 }
 
 function dailyGoalRangeValidationError(error: z.ZodError): DailyGoalRangeActionState {

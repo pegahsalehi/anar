@@ -36,17 +36,17 @@ export default async function SettingsPage() {
         <ChangePasswordForm />
       </div>
 
-      <section className="rounded-md border border-border bg-card p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+      <section className="rounded-md border border-border bg-card p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary/15 text-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/15 text-foreground">
               <ShieldCheck aria-hidden="true" className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-card-foreground">
+              <h2 className="text-base font-semibold text-card-foreground">
                 Privacy and health note
               </h2>
-              <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                 Nutrition values are user-entered. Anar calculates totals and stores
                 owner-scoped rows; it does not provide medical advice.
               </p>

@@ -67,6 +67,22 @@ describe("weekly progress", () => {
           carbohydrates_per_100g_snapshot: 15,
           fat_per_100g_snapshot: 2,
         },
+        {
+          local_log_date: "2026-07-16",
+          consumed_grams: 100,
+          calories_per_100g_snapshot: 1700,
+          protein_per_100g_snapshot: 110,
+          carbohydrates_per_100g_snapshot: 205,
+          fat_per_100g_snapshot: 60,
+        },
+        {
+          local_log_date: "2026-07-17",
+          consumed_grams: 100,
+          calories_per_100g_snapshot: 1900,
+          protein_per_100g_snapshot: 130,
+          carbohydrates_per_100g_snapshot: 240,
+          fat_per_100g_snapshot: 75,
+        },
       ],
     });
 
@@ -90,6 +106,7 @@ describe("weekly progress", () => {
       target: 2000,
       maxTarget: 2000,
       completionRatio: 0,
+      rangeStatus: "below",
     });
     expect(data.days[1].values.calories).toMatchObject({
       consumed: 200,
@@ -97,6 +114,7 @@ describe("weekly progress", () => {
       target: 2000,
       maxTarget: 2000,
       completionRatio: 0.1,
+      rangeStatus: "below",
     });
     expect(data.days[1].values.protein.consumed).toBe(9);
     expect(data.days[3]).toMatchObject({
@@ -105,5 +123,7 @@ describe("weekly progress", () => {
     });
     expect(data.days[3].values.calories.target).toBe(1800);
     expect(data.days[3].values.calories.minTarget).toBe(1600);
+    expect(data.days[3].values.calories.rangeStatus).toBe("inside");
+    expect(data.days[4].values.calories.rangeStatus).toBe("above");
   });
 });

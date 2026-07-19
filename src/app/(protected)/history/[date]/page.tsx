@@ -24,6 +24,7 @@ export default async function HistoryDatePage({ params }: HistoryDatePageProps) 
     <div className="space-y-7">
       <PageHeader
         eyebrow={date}
+        eyebrowClassName="text-[#45B385]"
         title="Day details"
         description="Compare the selected day's goals and logged food snapshots."
       />

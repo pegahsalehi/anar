@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { ImagePlus, Plus, Search } from "lucide-react";
 import { FoodCard } from "@/components/foods/food-card";
 import { PageHeader } from "@/components/layout/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
+import { IllustratedEmptyState } from "@/components/ui/illustrated-empty-state";
 import { getAuthenticatedFoods } from "@/features/foods/queries";
 
 export const metadata = {
@@ -76,20 +76,21 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
           ))}
         </div>
       ) : (
-        <EmptyState
-          title={searchTerm ? "No matching foods" : "No foods yet"}
+        <IllustratedEmptyState
+          title={searchTerm ? "No matching foods" : "Your library is empty"}
           description={
             searchTerm
               ? "Try another search or create a new food for your library."
-              : "Create your first reusable food, then log it from Today."
+              : "Create reusable foods first, then log them here by grams."
           }
+          illustrationSrc="/images/empty-states/nutrition-book.png"
           action={
             <Link
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995]"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
               href="/foods/new"
             >
-              <Plus aria-hidden="true" className="h-5 w-5" />
-              New food
+              <ImagePlus aria-hidden="true" className="h-5 w-5" />
+              Create food
             </Link>
           }
         />

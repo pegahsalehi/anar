@@ -47,6 +47,15 @@ const dailyGoalRangesMigration = fs.readFileSync(
   ),
   "utf8",
 );
+const dailyGoalRangesRepairMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260719195500_repair_daily_goal_ranges_save_contract.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase migrations", () => {
   it("grant app-owned tables only to authenticated", () => {
@@ -87,6 +96,12 @@ describe("Supabase migrations", () => {
       "grant select, insert, update on table public.daily_goals to authenticated;",
     );
     expect(dailyGoalRangesMigration).not.toMatch(
+      /grant\s+.+\s+on\s+table\s+public\.daily_goals\s+to\s+anon/i,
+    );
+    expect(dailyGoalRangesRepairMigration).toContain(
+      "grant select, insert, update on table public.daily_goals to authenticated;",
+    );
+    expect(dailyGoalRangesRepairMigration).not.toMatch(
       /grant\s+.+\s+on\s+table\s+public\.daily_goals\s+to\s+anon/i,
     );
   });
@@ -138,5 +153,27 @@ describe("Supabase migrations", () => {
     expect(dailyGoalRangesMigration).toContain("daily_goals_protein_range_order");
     expect(dailyGoalRangesMigration).toContain("daily_goals_carbohydrates_range_order");
     expect(dailyGoalRangesMigration).toContain("daily_goals_fat_range_order");
+  });
+
+  it("repairs the daily goal save contract without weakening ownership", () => {
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists calories_min");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists calories_max");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists protein_min");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists protein_max");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists carbohydrates_min");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists carbohydrates_max");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists fat_min");
+    expect(dailyGoalRangesRepairMigration).toContain("add column if not exists fat_max");
+    expect(dailyGoalRangesRepairMigration).toContain(
+      "add constraint daily_goals_user_effective_date_unique unique (user_id, effective_date)",
+    );
+    expect(dailyGoalRangesRepairMigration).toContain(
+      "alter table public.daily_goals enable row level security;",
+    );
+    expect(dailyGoalRangesRepairMigration).toContain("using (auth.uid() = user_id)");
+    expect(dailyGoalRangesRepairMigration).toContain("with check (auth.uid() = user_id)");
+    expect(dailyGoalRangesRepairMigration).toContain(
+      "grant select, insert, update on table public.daily_goals to authenticated;",
+    );
   });
 });

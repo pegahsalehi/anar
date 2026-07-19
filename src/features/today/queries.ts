@@ -17,6 +17,9 @@ import type {
   TodayFoodOption,
 } from "@/features/today/types";
 import type { Database } from "@/types/database";
+import { isRealSupabaseRequestError } from "@/lib/supabase/errors";
+
+const todayDataLoadError = "Today data could not be loaded. Please try again.";
 
 type TodayFoodRow = Pick<
   Database["public"]["Tables"]["foods"]["Row"],
@@ -59,24 +62,29 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
   const empty = buildEmptyDashboardData();
 
-  if (!user) {
+  if (authError) {
     return {
       ...empty,
-      error: "You must be signed in.",
+      error: todayDataLoadError,
     };
   }
 
-  const { data: profile } = await supabase
+  if (!user) {
+    return empty;
+  }
+
+  const profileResult = await supabase
     .from("profiles")
     .select("timezone")
     .eq("id", user.id)
     .maybeSingle();
 
-  const profileRow = profile as ProfileTimezoneRow | null;
+  const profileRow = profileResult.data as ProfileTimezoneRow | null;
   const timezone = profileRow?.timezone ?? "UTC";
   const localDate = getLocalISODate(new Date(), timezone);
 
@@ -187,8 +195,14 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
       localDate,
     ),
     error:
-      goalResult.error || foodsResult.error || logsResult.error || logDaysResult.error
-        ? "Some nutrition data could not be loaded."
+      [
+        profileResult.error,
+        goalResult.error,
+        foodsResult.error,
+        logsResult.error,
+        logDaysResult.error,
+      ].some(isRealSupabaseRequestError)
+        ? todayDataLoadError
         : null,
   };
 }

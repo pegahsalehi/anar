@@ -6,6 +6,9 @@ import type {
   SettingsPageData,
 } from "@/features/settings/types";
 import type { Database } from "@/types/database";
+import { isRealSupabaseRequestError } from "@/lib/supabase/errors";
+
+const settingsDataLoadError = "Settings data could not be loaded. Please try again.";
 
 type ProfileTimezoneRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
@@ -28,13 +31,22 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    return {
+      dailyGoals: getDefaultDailyGoalRanges(),
+      effectiveDate: "",
+      error: settingsDataLoadError,
+    };
+  }
 
   if (!user) {
     return {
       dailyGoals: getDefaultDailyGoalRanges(),
       effectiveDate: "",
-      error: "You must be signed in.",
+      error: null,
     };
   }
 
@@ -60,7 +72,9 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
   return {
     dailyGoals: goal ? getDailyGoalRanges(goal as GoalRow) : getDefaultDailyGoalRanges(),
     effectiveDate: localDate,
-    error: profileError || goalError ? "Settings could not be fully loaded." : null,
+    error: [profileError, goalError].some(isRealSupabaseRequestError)
+      ? settingsDataLoadError
+      : null,
   };
 }
 

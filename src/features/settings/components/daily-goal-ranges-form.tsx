@@ -3,19 +3,23 @@
 import {
   useActionState,
   useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
 } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
+import { SettingsAccordionCard } from "@/features/settings/components/settings-accordion-card";
 import { saveDailyGoalRangesAction } from "@/features/settings/actions";
 import {
   initialDailyGoalRangeActionState,
   type DailyGoalRangeField,
   type DailyGoalRangeValues,
 } from "@/features/settings/types";
+import { formatDecimal, formatInteger } from "@/lib/format";
 import {
   getGoalNumberValidationError,
   validateDailyGoalRangeFormData,
@@ -69,22 +73,32 @@ export function DailyGoalRangesForm({
   );
   const [clientFieldErrors, setClientFieldErrors] =
     useState<typeof state.fieldErrors>({});
+  const [savedValues, setSavedValues] = useState(initialValues);
+  const pendingValuesRef = useRef<DailyGoalRangeValues | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (state.status === "success") {
       setClientFieldErrors({});
+      if (pendingValuesRef.current) {
+        setSavedValues(pendingValuesRef.current);
+        pendingValuesRef.current = null;
+      }
+      router.refresh();
     }
-  }, [state.status]);
+  }, [router, state]);
 
   function validateClientForm(event: FormEvent<HTMLFormElement>) {
     const result = validateDailyGoalRangeFormData(new FormData(event.currentTarget));
 
     if (!result.ok) {
+      pendingValuesRef.current = null;
       setClientFieldErrors(result.fieldErrors);
       event.preventDefault();
       return;
     }
 
+    pendingValuesRef.current = result.values;
     setClientFieldErrors({});
   }
 
@@ -101,61 +115,58 @@ export function DailyGoalRangesForm({
     return clientFieldErrors[field] ?? state.fieldErrors[field];
   }
 
+  const summary = formatDailyGoalRangeSummary(savedValues);
+
   return (
-    <form
-      action={formAction}
-      className="rounded-md border border-border bg-card p-5 shadow-sm sm:p-6"
-      onSubmit={validateClientForm}
+    <SettingsAccordionCard
+      defaultOpen
+      description="Set the nutrition range Anar should use from today forward."
+      summary={summary}
+      title="Daily goal ranges"
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-card-foreground">Daily goal ranges</h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Set the nutrition range Anar should use from today forward.
-          </p>
+      {effectiveDate ? (
+        <span className="inline-flex w-fit rounded-sm bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+          Effective {effectiveDate}
+        </span>
+      ) : null}
+
+      <form action={formAction} className="mt-5" onSubmit={validateClientForm}>
+        <SettingsActionMessage message={state.message} status={state.status} />
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {nutrients.map((nutrient) => (
+            <section
+              className="rounded-md border border-border bg-background/60 p-4"
+              key={nutrient.label}
+            >
+              <h3 className="text-sm font-semibold text-foreground">{nutrient.label}</h3>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <GoalInput
+                  defaultValue={initialValues[nutrient.minName]}
+                  error={getFieldError(nutrient.minName)}
+                  label="Minimum"
+                  name={nutrient.minName}
+                  onChange={handleInputChange}
+                  unit={nutrient.unit}
+                />
+                <GoalInput
+                  defaultValue={initialValues[nutrient.maxName]}
+                  error={getFieldError(nutrient.maxName)}
+                  label="Maximum"
+                  name={nutrient.maxName}
+                  onChange={handleInputChange}
+                  unit={nutrient.unit}
+                />
+              </div>
+            </section>
+          ))}
         </div>
-        {effectiveDate ? (
-          <span className="inline-flex w-fit rounded-sm bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-            Effective {effectiveDate}
-          </span>
-        ) : null}
-      </div>
 
-      <SettingsActionMessage message={state.message} status={state.status} />
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        {nutrients.map((nutrient) => (
-          <section
-            className="rounded-md border border-border bg-background/60 p-4"
-            key={nutrient.label}
-          >
-            <h3 className="text-sm font-semibold text-foreground">{nutrient.label}</h3>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <GoalInput
-                defaultValue={initialValues[nutrient.minName]}
-                error={getFieldError(nutrient.minName)}
-                label="Minimum"
-                name={nutrient.minName}
-                onChange={handleInputChange}
-                unit={nutrient.unit}
-              />
-              <GoalInput
-                defaultValue={initialValues[nutrient.maxName]}
-                error={getFieldError(nutrient.maxName)}
-                label="Maximum"
-                name={nutrient.maxName}
-                onChange={handleInputChange}
-                unit={nutrient.unit}
-              />
-            </div>
-          </section>
-        ))}
-      </div>
-
-      <div className="mt-5 flex justify-end">
-        <SettingsSubmitButton>Save goal ranges</SettingsSubmitButton>
-      </div>
-    </form>
+        <div className="mt-5 flex justify-end">
+          <SettingsSubmitButton>Save goal ranges</SettingsSubmitButton>
+        </div>
+      </form>
+    </SettingsAccordionCard>
   );
 }
 
@@ -254,4 +265,13 @@ function removeFieldError(
   const nextErrors = { ...errors };
   delete nextErrors[field];
   return nextErrors;
+}
+
+function formatDailyGoalRangeSummary(values: DailyGoalRangeValues) {
+  return [
+    `Calories ${formatInteger(values.caloriesMin)}-${formatInteger(values.caloriesMax)} cal`,
+    `Protein ${formatDecimal(values.proteinMin)}-${formatDecimal(values.proteinMax)} g`,
+    `Carbs ${formatDecimal(values.carbohydratesMin)}-${formatDecimal(values.carbohydratesMax)} g`,
+    `Fat ${formatDecimal(values.fatMin)}-${formatDecimal(values.fatMax)} g`,
+  ].join(" | ");
 }

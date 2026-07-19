@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ImagePlus, Plus, Utensils, X } from "lucide-react";
 import { FoodImage } from "@/components/foods/food-image";
@@ -11,6 +10,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { DailySummary } from "@/components/nutrition/daily-summary";
 import { FoodLogItem } from "@/components/nutrition/food-log-item";
 import { StreakCard } from "@/components/nutrition/streak-card";
+import { IllustratedEmptyState } from "@/components/ui/illustrated-empty-state";
 import { addFoodLogAction } from "@/features/today/actions";
 import {
   initialLogFoodMutationState,
@@ -36,6 +36,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
     <div className="space-y-7">
       <PageHeader
         eyebrow={data.displayDate}
+        eyebrowClassName="text-[#45B385]"
         title="How is today going?"
         description="Track today's intake, review macro progress, and log favorite foods quickly."
         action={
@@ -75,7 +76,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
             ))}
           </div>
         ) : (
-          <TodayEmptyStateCard
+          <IllustratedEmptyState
             action={
               <button
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
@@ -124,7 +125,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
             ))}
           </div>
         ) : (
-          <TodayEmptyStateCard
+          <IllustratedEmptyState
             action={
               <Link
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
@@ -148,44 +149,6 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         selectedFoodId={selectedFoodId}
       />
     </div>
-  );
-}
-
-function TodayEmptyStateCard({
-  action,
-  description,
-  illustrationSrc,
-  title,
-}: {
-  action: ReactNode;
-  description: string;
-  illustrationSrc: string;
-  title: string;
-}) {
-  return (
-    <section className="rounded-[24px] border border-border bg-card px-5 py-7 shadow-[0_18px_44px_rgb(16_42_67_/_0.06)] sm:px-8 lg:px-12 lg:py-10">
-      <div className="grid items-center gap-7 text-center sm:grid-cols-[13rem_1fr] sm:text-left lg:grid-cols-[15rem_1fr] lg:gap-10">
-        <div className="mx-auto flex h-48 w-48 items-center justify-center overflow-hidden rounded-[28px] bg-muted shadow-[0_12px_30px_rgb(16_42_67_/_0.06)] sm:mx-0 lg:h-56 lg:w-56">
-          <Image
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-contain"
-            height={1254}
-            src={illustrationSrc}
-            width={1254}
-          />
-        </div>
-        <div className="mx-auto max-w-xl sm:mx-0">
-          <h3 className="text-2xl font-semibold leading-tight text-card-foreground">
-            {title}
-          </h3>
-          <p className="mt-3 text-base leading-7 text-muted-foreground sm:text-lg">
-            {description}
-          </p>
-          <div className="mt-6 flex justify-center sm:justify-start">{action}</div>
-        </div>
-      </div>
-    </section>
   );
 }
 
