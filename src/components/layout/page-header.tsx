@@ -17,7 +17,7 @@ export function PageHeader({
   action,
 }: PageHeaderProps) {
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+    <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
       <div className="flex min-w-0 items-start justify-between gap-3 sm:block">
         <div className="min-w-0">
           {eyebrow ? (

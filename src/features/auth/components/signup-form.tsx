@@ -24,14 +24,14 @@ export function SignupForm() {
   }, []);
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form action={formAction} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
       <input name="timezone" type="hidden" value={timezone} />
       <AuthMessage state={state} />
       <label className="block">
         <span className="text-sm font-semibold text-[#12352A]">First name</span>
         <span
           className={cn(
-            "mt-2 flex min-h-12 items-center gap-3 rounded-md border border-[#DCE9E1] bg-white px-3.5 py-3 shadow-sm transition focus-within:border-[#55DCA4] focus-within:ring-4 focus-within:ring-[#55DCA4]/20",
+            "mt-1.5 flex min-h-11 items-center gap-2.5 rounded-md border border-[#DCE9E1] bg-white px-3 py-2.5 shadow-sm transition focus-within:border-[#55DCA4] focus-within:ring-4 focus-within:ring-[#55DCA4]/20 sm:mt-2 sm:min-h-12 sm:gap-3 sm:px-3.5 sm:py-3",
             state.fieldErrors.displayName && "border-[#DE2624] focus-within:border-[#DE2624] focus-within:ring-[#DE2624]/15",
           )}
         >
@@ -56,7 +56,7 @@ export function SignupForm() {
         <span className="text-sm font-semibold text-[#12352A]">Email</span>
         <span
           className={cn(
-            "mt-2 flex min-h-12 items-center gap-3 rounded-md border border-[#DCE9E1] bg-white px-3.5 py-3 shadow-sm transition focus-within:border-[#55DCA4] focus-within:ring-4 focus-within:ring-[#55DCA4]/20",
+            "mt-1.5 flex min-h-11 items-center gap-2.5 rounded-md border border-[#DCE9E1] bg-white px-3 py-2.5 shadow-sm transition focus-within:border-[#55DCA4] focus-within:ring-4 focus-within:ring-[#55DCA4]/20 sm:mt-2 sm:min-h-12 sm:gap-3 sm:px-3.5 sm:py-3",
             state.fieldErrors.email && "border-[#DE2624] focus-within:border-[#DE2624] focus-within:ring-[#DE2624]/15",
           )}
         >
@@ -96,7 +96,7 @@ export function SignupForm() {
       <div>
         <div
           className={cn(
-            "flex items-start gap-3 rounded-md border border-[#DCE9E1] bg-[#F7F8F6] px-3.5 py-3",
+            "flex items-start gap-2.5 rounded-md border border-[#DCE9E1] bg-[#F7F8F6] px-3 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3",
             termsError && "border-[#DE2624]/45 bg-[#DE2624]/5",
           )}
         >
@@ -112,7 +112,7 @@ export function SignupForm() {
             required
             type="checkbox"
           />
-          <p className="text-sm leading-6 text-[#51685D]" id="signup-terms-label">
+          <p className="text-sm leading-5 text-[#51685D] sm:leading-6" id="signup-terms-label">
             I agree to the{" "}
             <Link
               className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"

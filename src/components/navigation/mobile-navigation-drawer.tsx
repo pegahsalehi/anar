@@ -166,13 +166,27 @@ export function MobileNavigationDrawer() {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Open navigation menu"
-        className="inline-flex min-h-11 items-center gap-2 rounded-md px-1.5 py-1 text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
+        className="inline-flex min-h-11 max-w-[9.75rem] shrink-0 items-center gap-2 rounded-md px-1 py-1 text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hidden"
         onClick={openDrawer}
         ref={triggerRef}
         type="button"
       >
         <Menu aria-hidden="true" className="h-5 w-5" strokeWidth={2.1} />
-        <AnarLogo compact decorative href={null} imageClassName="h-9 w-9" />
+        <AnarLogo
+          className="hidden min-[390px]:inline-flex"
+          decorative
+          href={null}
+          imageClassName="w-[84px]"
+          imageSizes="84px"
+          variant="nav"
+        />
+        <AnarLogo
+          className="min-[390px]:hidden"
+          compact
+          decorative
+          href={null}
+          imageClassName="h-9 w-9"
+        />
       </button>
       {isMounted ? createPortal(drawer, document.body) : null}
     </>

@@ -24,13 +24,13 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
   const notice = created ? "Food created." : updated ? "Food updated." : null;
 
   return (
-    <div className="space-y-7">
+    <div className="min-w-0 space-y-5 sm:space-y-7">
       <PageHeader
         title="Food Library"
         description="Your reusable foods with nutrition values per 100 g."
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] sm:min-h-12 sm:px-5 sm:py-3"
             href="/foods/new"
           >
             <Plus aria-hidden="true" className="h-5 w-5" />
@@ -53,7 +53,7 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
 
       <form
         action="/foods"
-        className="flex min-h-12 items-center gap-3 rounded-md border border-border bg-card px-4 text-sm shadow-sm"
+        className="flex min-h-11 items-center gap-2.5 rounded-md border border-border bg-card px-3 text-sm shadow-sm sm:min-h-12 sm:gap-3 sm:px-4"
       >
         <Search aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
         <label className="sr-only" htmlFor="food-search">
@@ -70,7 +70,7 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
       </form>
 
       {foods.length > 0 ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2.5 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
           {foods.map((food) => (
             <FoodCard food={food} key={food.id} />
           ))}

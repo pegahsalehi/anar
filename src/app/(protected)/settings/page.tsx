@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   const data = await getSettingsPageData();
 
   return (
-    <div className="space-y-7">
+    <div className="min-w-0 space-y-5 sm:space-y-7">
       <PageHeader
         title="Settings"
         description="Manage nutrition targets and privacy."
@@ -28,7 +28,7 @@ export default async function SettingsPage() {
         </p>
       ) : null}
 
-      <div className="grid gap-5">
+      <div className="grid gap-4 sm:gap-5">
         <DailyNutritionTargetsForm
           effectiveDate={data.effectiveDate}
           initialValues={data.dailyGoals}
@@ -38,7 +38,7 @@ export default async function SettingsPage() {
           summary="User-entered nutrition values, account-scoped data, and no medical advice."
           title="Privacy & nutrition information"
         >
-          <div className="grid gap-3 text-sm leading-6 text-muted-foreground">
+          <div className="grid gap-2.5 text-sm leading-6 text-muted-foreground sm:gap-3">
             <p>
               Nutrition values are entered by you. Anar calculates totals from
               those user-entered values.
@@ -55,24 +55,24 @@ export default async function SettingsPage() {
       </div>
       <section
         aria-labelledby="legal-privacy-title"
-        className="rounded-md border border-border bg-card p-5 shadow-sm sm:p-6"
+        className="rounded-md border border-border bg-card p-4 shadow-sm sm:p-6"
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-card-foreground" id="legal-privacy-title">
+            <h2 className="text-base font-semibold text-card-foreground sm:text-lg" id="legal-privacy-title">
               Legal & privacy
             </h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
               Review Anar&apos;s public legal documents.
             </p>
           </div>
           <nav
             aria-label="Legal and privacy documents"
-            className="flex flex-wrap gap-2 text-sm font-semibold"
+            className="grid w-full grid-cols-3 gap-1.5 text-[0.7rem] font-semibold sm:w-auto sm:flex sm:flex-wrap sm:gap-2 sm:text-sm"
           >
             {legalLinks.map((link) => (
               <Link
-                className="inline-flex min-h-10 items-center rounded-md border border-border px-3 py-2 text-foreground transition hover:bg-surface-soft hover:text-effective-badge-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                className="inline-flex min-h-9 items-center justify-center rounded-md border border-border px-2 py-1.5 text-center leading-4 text-foreground transition hover:bg-surface-soft hover:text-effective-badge-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:min-h-10 sm:px-3 sm:py-2 sm:leading-5"
                 href={link.href}
                 key={link.href}
               >

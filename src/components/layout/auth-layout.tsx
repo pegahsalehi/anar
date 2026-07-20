@@ -21,13 +21,21 @@ const benefits: Array<{ title: string; icon: LucideIcon }> = [
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-white px-4 py-5 text-[#12352A] sm:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-[#FFFCF7] px-4 py-3 text-[#12352A] sm:px-8 sm:py-5 lg:bg-white">
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-0 bg-[url('/images/auth/anar-auth-background.png')] bg-cover bg-[position:76%_center] bg-no-repeat sm:bg-center"
+        className="absolute inset-x-0 top-0 z-0 h-40 bg-gradient-to-b from-[#E8FFF4] to-[#FFFCF7]/0 lg:hidden"
       />
-      <div className="relative mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-6xl flex-col">
-        <div className="grid flex-1 items-center gap-8 py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,28rem)] lg:gap-16">
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-20 left-1/2 z-0 h-48 w-[140%] -translate-x-1/2 rounded-[50%] border-t border-[#55DCA4]/25 lg:hidden"
+      />
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 hidden bg-[url('/images/auth/anar-auth-background.png')] bg-cover bg-center bg-no-repeat lg:block"
+      />
+      <div className="relative mx-auto flex min-h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col sm:min-h-[calc(100vh-2.5rem)]">
+        <div className="grid flex-1 items-center gap-6 py-4 sm:gap-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,28rem)] lg:gap-16">
           <section className="relative hidden min-h-[34rem] max-w-xl flex-col justify-center lg:flex">
             <h1 className="max-w-lg text-5xl font-semibold leading-[1.04] text-[#12352A]">
               Made for the meals you actually eat.
@@ -50,7 +58,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <div className="relative mx-auto w-full max-w-md">
             <section
               aria-label="Authentication form"
-              className="w-full overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-6 shadow-[0_24px_70px_rgb(18_53_42_/_0.12)] sm:p-8"
+              className="w-full overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-5 shadow-[0_18px_52px_rgb(18_53_42_/_0.12)] sm:p-8 sm:shadow-[0_24px_70px_rgb(18_53_42_/_0.12)]"
             >
               <div className="relative z-10">
                 <AuthBrandLogo />

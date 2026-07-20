@@ -58,10 +58,10 @@ type ImageProcessingState =
 type FoodFieldErrorName = keyof FoodMutationState["fieldErrors"];
 
 const neutralInputClassName =
-  "mt-2 min-h-12 w-full rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 text-foreground shadow-sm outline-none transition hover:border-[rgb(var(--field-neutral-border-hover))] focus:border-primary focus:ring-4 focus:ring-primary/15";
+  "mt-1.5 min-h-11 w-full rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 text-foreground shadow-sm outline-none transition hover:border-[rgb(var(--field-neutral-border-hover))] focus:border-primary focus:ring-4 focus:ring-primary/15 sm:mt-2 sm:min-h-12";
 
 const neutralTextareaClassName =
-  "mt-2 min-h-28 w-full resize-y rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 py-3 text-foreground shadow-sm outline-none transition hover:border-[rgb(var(--field-neutral-border-hover))] focus:border-primary focus:ring-4 focus:ring-primary/15";
+  "mt-1.5 min-h-20 w-full resize-y rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 py-2.5 text-foreground shadow-sm outline-none transition hover:border-[rgb(var(--field-neutral-border-hover))] focus:border-primary focus:ring-4 focus:ring-primary/15 sm:mt-2 sm:min-h-28 sm:py-3";
 
 export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps) {
   const [state, formAction] = useActionState(action, initialFoodMutationState);
@@ -240,7 +240,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
   return (
     <form
       action={formAction}
-      className="grid gap-5 rounded-md border border-border bg-card p-5 shadow-sm"
+      className="grid min-w-0 gap-4 rounded-md border border-border bg-card p-4 shadow-sm sm:gap-5 sm:p-5"
       onSubmit={validateClientForm}
     >
       <input name="imageAction" type="hidden" value={imageAction} />
@@ -249,21 +249,21 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
           {state.message}
         </p>
       ) : null}
-      <div className="grid gap-5 lg:grid-cols-[18rem_1fr]">
-        <div className="space-y-3">
-          <div className="relative aspect-square overflow-hidden rounded-md border border-soft-border bg-surface-soft">
+      <div className="grid gap-4 lg:grid-cols-[18rem_1fr] lg:gap-5">
+        <div className="space-y-2.5 sm:space-y-3">
+          <div className="relative aspect-[16/9] max-h-[12.5rem] min-h-[8.75rem] overflow-hidden rounded-md border border-soft-border bg-surface-soft sm:aspect-[4/3] sm:max-h-none lg:aspect-square">
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img alt={`${title} preview`} className="h-full w-full object-cover" src={previewUrl} />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
-                <ImagePlus aria-hidden="true" className="h-9 w-9 text-primary" />
-                <span className="text-sm font-medium">No image selected</span>
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImagePlus aria-hidden="true" className="h-7 w-7 text-primary sm:h-9 sm:w-9" />
+                <span className="text-sm font-medium">No image</span>
               </div>
             )}
           </div>
           <div className="flex gap-2">
-            <label className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-soft-border bg-surface-soft px-4 py-2 text-sm font-semibold text-foreground transition hover:border-[rgb(var(--field-neutral-border-hover))] hover:bg-surface-muted">
+            <label className="inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-soft-border bg-surface-soft px-3 py-2 text-sm font-semibold text-foreground transition hover:border-[rgb(var(--field-neutral-border-hover))] hover:bg-surface-muted sm:min-h-11 sm:px-4">
               <ImagePlus aria-hidden="true" className="h-4 w-4" />
               Choose image
               <input
@@ -296,7 +296,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             ) : null}
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            JPEG, PNG, or WebP. Images over 1 MB are resized before upload.
+            JPEG, PNG, or WebP. Images over 1 MB are resized.
           </p>
           {imageProcessing.status === "processing" ? (
             <p className="text-xs leading-5 text-muted-foreground">Preparing image...</p>
@@ -314,7 +314,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
           ) : null}
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-3.5 sm:gap-4">
           <FieldError message={getFieldError("name")}>
             <label className="block">
               <span className="text-sm font-semibold">Food name</span>
@@ -329,7 +329,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
           <p className="text-xs font-semibold leading-5 text-muted-foreground">
             Enter values per 100 g
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
             <NutritionInputField
               error={getFieldError("caloriesPer100g")}
               field="caloriesPer100g"
@@ -337,6 +337,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               onValueChange={handleNutritionInputChange}
               placeholder="654"
               registration={caloriesRegistration}
+              unit="cal"
               variant="calories"
             />
             <NutritionInputField
@@ -346,15 +347,17 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               onValueChange={handleNutritionInputChange}
               placeholder="15.2"
               registration={proteinRegistration}
+              unit="g"
               variant="protein"
             />
             <NutritionInputField
               error={getFieldError("carbohydratesPer100g")}
               field="carbohydratesPer100g"
-              label="Carbohydrates"
+              label="Carbs"
               onValueChange={handleNutritionInputChange}
               placeholder="13.7"
               registration={carbohydratesRegistration}
+              unit="g"
               variant="carbs"
             />
             <NutritionInputField
@@ -364,10 +367,11 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               onValueChange={handleNutritionInputChange}
               placeholder="65.2"
               registration={fatRegistration}
+              unit="g"
               variant="fat"
             />
           </div>
-          <label className="flex min-h-12 items-center gap-3 rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 shadow-sm transition hover:border-[rgb(var(--field-neutral-border-hover))] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15">
+          <label className="flex min-h-11 items-center gap-3 rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 shadow-sm transition hover:border-[rgb(var(--field-neutral-border-hover))] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15 sm:min-h-12">
             <input className="h-5 w-5 accent-primary" type="checkbox" {...register("isFavorite")} />
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
               <Heart aria-hidden="true" className="h-4 w-4" />
@@ -402,6 +406,7 @@ function NutritionInputField({
   onValueChange,
   placeholder,
   registration,
+  unit,
   variant,
 }: {
   error?: string;
@@ -414,6 +419,7 @@ function NutritionInputField({
   ) => void;
   placeholder: string;
   registration: UseFormRegisterReturn<NutritionFieldName>;
+  unit: "cal" | "g";
   variant: NutrientVariant;
 }) {
   const errorId = `${field}-error`;
@@ -421,14 +427,14 @@ function NutritionInputField({
   return (
     <label className="block">
       <span
-        className="text-sm font-semibold"
+        className="text-[0.78rem] font-semibold sm:text-sm"
         style={{ color: nutrientPalette[variant].color }}
       >
         {label}
       </span>
       <span
         className={cn(
-          "mt-2 flex min-h-12 w-full items-center rounded-md border-2 px-3 shadow-sm transition focus-within:ring-4",
+          "mt-1.5 flex min-h-11 w-full items-center gap-1.5 rounded-md border-2 px-2 shadow-sm transition focus-within:ring-4 sm:mt-2 sm:min-h-12 sm:px-3",
           error
             ? "border-coral bg-coral/5 focus-within:border-coral focus-within:ring-coral/15"
             : "border-[var(--nutrient-input-border)] bg-[var(--nutrient-input-bg)] shadow-[var(--nutrient-input-shadow)] focus-within:border-[var(--nutrient-input-border-focus)] focus-within:ring-[var(--nutrient-input-ring)]",
@@ -439,15 +445,18 @@ function NutritionInputField({
           {...registration}
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
-          className="min-w-0 flex-1 bg-transparent py-2.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent py-2 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground sm:py-2.5"
           inputMode="decimal"
           onChange={(event) => onValueChange(field, event, registration.onChange)}
           placeholder={placeholder}
           type="text"
         />
+        <span className="shrink-0 text-[0.7rem] font-semibold text-muted-foreground">
+          {unit}
+        </span>
       </span>
       {error ? (
-        <span className="mt-2 block text-sm text-coral" id={errorId} role="alert">
+        <span className="mt-1.5 block text-xs text-coral sm:mt-2 sm:text-sm" id={errorId} role="alert">
           {error}
         </span>
       ) : null}
@@ -486,13 +495,13 @@ function SubmitButton({
   return (
     <button
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition sm:min-h-12 sm:px-5 sm:py-3",
         "hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-wait disabled:opacity-70",
       )}
       disabled={pending || disabled}
       type="submit"
     >
-      <Save aria-hidden="true" className="h-5 w-5" />
+      <Save aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5" />
       {pending ? "Saving..." : children}
     </button>
   );

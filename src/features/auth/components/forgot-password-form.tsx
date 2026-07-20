@@ -11,17 +11,17 @@ export function ForgotPasswordForm() {
   const [state, formAction] = useActionState(forgotPasswordAction, initialAuthState);
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form action={formAction} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
       <AuthMessage state={state} />
       <label className="block">
         <span className="text-sm font-medium text-foreground">Email</span>
-        <span className="mt-2 flex items-center gap-2 rounded-md border border-border bg-card px-3 py-3">
+        <span className="mt-1.5 flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 sm:mt-2 sm:min-h-12 sm:py-3">
           <Mail aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
           <input
             aria-describedby={state.fieldErrors.email ? "forgot-email-error" : undefined}
             aria-invalid={Boolean(state.fieldErrors.email)}
             autoComplete="email"
-            className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
             name="email"
             placeholder="you@example.com"
             type="email"

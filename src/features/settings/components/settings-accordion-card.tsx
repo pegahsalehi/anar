@@ -23,17 +23,17 @@ export function SettingsAccordionCard({
   const panelId = useId();
 
   return (
-    <section className="overflow-hidden rounded-md border border-border bg-card shadow-sm">
+    <section className="min-w-0 overflow-hidden rounded-md border border-border bg-card shadow-sm">
       <button
         aria-controls={panelId}
         aria-expanded={isOpen}
-        className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:px-6"
+        className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:gap-4 sm:px-6 sm:py-4"
         onClick={() => setIsOpen((current) => !current)}
         type="button"
       >
         <span className="min-w-0">
-          <span className="block text-lg font-semibold text-card-foreground">{title}</span>
-          <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+          <span className="block text-base font-semibold text-card-foreground sm:text-lg">{title}</span>
+          <span className="mt-1 block text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
             {description}
           </span>
           {summary && !isOpen ? (
@@ -45,7 +45,7 @@ export function SettingsAccordionCard({
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            "mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300",
+            "mt-0.5 h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 sm:mt-1",
             isOpen && "rotate-180 text-foreground",
           )}
           strokeWidth={2}
@@ -61,7 +61,7 @@ export function SettingsAccordionCard({
         inert={!isOpen}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-border px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+          <div className="border-t border-border px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
             {children}
           </div>
         </div>

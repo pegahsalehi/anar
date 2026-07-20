@@ -18,7 +18,7 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
     <>
       <button
         aria-label={`Delete ${foodName}`}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-coral hover:text-coral"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-coral hover:text-coral"
         onClick={() => setIsOpen(true)}
         type="button"
       >
@@ -27,6 +27,7 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
       {isOpen ? (
         <div
           aria-modal="true"
+          aria-labelledby="delete-food-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 px-4 backdrop-blur-sm"
           onKeyDown={(event) => {
             if (event.key === "Escape") {
@@ -41,7 +42,9 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-card-foreground">Delete food?</h2>
+                <h2 className="text-lg font-semibold text-card-foreground" id="delete-food-title">
+                  Delete food?
+                </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   This will remove <strong className="text-foreground">{foodName}</strong> from
                   your library. Existing log snapshots will stay unchanged.

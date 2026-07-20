@@ -19,7 +19,7 @@ export default async function EditFoodPage({ params }: EditFoodPageProps) {
   const action = updateFoodAction.bind(null, id);
 
   return (
-    <div className="space-y-7">
+    <div className="min-w-0 space-y-5 sm:space-y-7">
       <PageHeader
         eyebrow={food.name}
         title="Edit food"

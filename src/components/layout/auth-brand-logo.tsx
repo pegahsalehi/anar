@@ -10,16 +10,16 @@ export function AuthBrandLogo() {
 
   return (
     <AnarLogo
-      className={cn("w-full", isLoginPage ? "mb-5 sm:mb-6" : "mb-8")}
+      className={cn("w-full", isLoginPage ? "mb-4 sm:mb-6" : "mb-5 sm:mb-8")}
       href="/login"
       imageClassName={
         isLoginPage
-          ? "w-[104px] sm:w-[118px] md:w-[128px]"
+          ? "w-[96px] sm:w-[118px] md:w-[128px]"
           : undefined
       }
       imageSizes={
         isLoginPage
-          ? "(min-width: 768px) 128px, (min-width: 640px) 118px, 104px"
+          ? "(min-width: 768px) 128px, (min-width: 640px) 118px, 96px"
           : undefined
       }
       variant="auth"
