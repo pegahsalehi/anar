@@ -9,10 +9,16 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
+  type ReactNode,
 } from "react";
 import { useFormStatus } from "react-dom";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { Heart, ImagePlus, Save, X } from "lucide-react";
+import {
+  getNutrientInputStyleVariables,
+  nutrientPalette,
+  type NutrientVariant,
+} from "@/components/nutrition/nutrient-theme";
 import type { FoodFormValues, FoodMutationState, FoodRow } from "@/features/foods/types";
 import { initialFoodMutationState } from "@/features/foods/types";
 import {
@@ -50,6 +56,12 @@ type ImageProcessingState =
   | { status: "ready"; fileSize: number; wasCompressed: boolean };
 
 type FoodFieldErrorName = keyof FoodMutationState["fieldErrors"];
+
+const neutralInputClassName =
+  "mt-2 min-h-12 w-full rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 text-foreground shadow-sm outline-none transition hover:border-[rgb(var(--field-neutral-border-hover))] focus:border-primary focus:ring-4 focus:ring-primary/15";
+
+const neutralTextareaClassName =
+  "mt-2 min-h-28 w-full resize-y rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 py-3 text-foreground shadow-sm outline-none transition hover:border-[rgb(var(--field-neutral-border-hover))] focus:border-primary focus:ring-4 focus:ring-primary/15";
 
 export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps) {
   const [state, formAction] = useActionState(action, initialFoodMutationState);
@@ -239,19 +251,19 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
       ) : null}
       <div className="grid gap-5 lg:grid-cols-[18rem_1fr]">
         <div className="space-y-3">
-          <div className="relative aspect-square overflow-hidden rounded-md border border-border bg-muted">
+          <div className="relative aspect-square overflow-hidden rounded-md border border-soft-border bg-surface-soft">
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img alt={`${title} preview`} className="h-full w-full object-cover" src={previewUrl} />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
-                <ImagePlus aria-hidden="true" className="h-9 w-9 text-fresh" />
+                <ImagePlus aria-hidden="true" className="h-9 w-9" />
                 <span className="text-sm font-medium">No image selected</span>
               </div>
             )}
           </div>
           <div className="flex gap-2">
-            <label className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:bg-muted">
+            <label className="inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-soft-border bg-surface-soft px-4 py-2 text-sm font-semibold text-foreground transition hover:border-[rgb(var(--field-neutral-border-hover))] hover:bg-surface-muted">
               <ImagePlus aria-hidden="true" className="h-4 w-4" />
               Choose image
               <input
@@ -307,7 +319,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             <label className="block">
               <span className="text-sm font-semibold">Food name</span>
               <input
-                className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
+                className={neutralInputClassName}
                 placeholder="Walnuts"
                 type="text"
                 {...register("name")}
@@ -315,88 +327,44 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             </label>
           </FieldError>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <FieldError message={getFieldError("caloriesPer100g")}>
-              <label className="block">
-                <span className="text-sm font-semibold">Calories per 100 g</span>
-                <input
-                  {...caloriesRegistration}
-                  aria-invalid={Boolean(getFieldError("caloriesPer100g"))}
-                  className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
-                  inputMode="decimal"
-                  onChange={(event) =>
-                    handleNutritionInputChange(
-                      "caloriesPer100g",
-                      event,
-                      caloriesRegistration.onChange,
-                    )
-                  }
-                  placeholder="654"
-                  type="text"
-                />
-              </label>
-            </FieldError>
-            <FieldError message={getFieldError("proteinPer100g")}>
-              <label className="block">
-                <span className="text-sm font-semibold">Protein</span>
-                <input
-                  {...proteinRegistration}
-                  aria-invalid={Boolean(getFieldError("proteinPer100g"))}
-                  className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
-                  inputMode="decimal"
-                  onChange={(event) =>
-                    handleNutritionInputChange(
-                      "proteinPer100g",
-                      event,
-                      proteinRegistration.onChange,
-                    )
-                  }
-                  placeholder="15.2"
-                  type="text"
-                />
-              </label>
-            </FieldError>
-            <FieldError message={getFieldError("carbohydratesPer100g")}>
-              <label className="block">
-                <span className="text-sm font-semibold">Carbohydrates</span>
-                <input
-                  {...carbohydratesRegistration}
-                  aria-invalid={Boolean(getFieldError("carbohydratesPer100g"))}
-                  className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
-                  inputMode="decimal"
-                  onChange={(event) =>
-                    handleNutritionInputChange(
-                      "carbohydratesPer100g",
-                      event,
-                      carbohydratesRegistration.onChange,
-                    )
-                  }
-                  placeholder="13.7"
-                  type="text"
-                />
-              </label>
-            </FieldError>
-            <FieldError message={getFieldError("fatPer100g")}>
-              <label className="block">
-                <span className="text-sm font-semibold">Fat</span>
-                <input
-                  {...fatRegistration}
-                  aria-invalid={Boolean(getFieldError("fatPer100g"))}
-                  className="mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
-                  inputMode="decimal"
-                  onChange={(event) =>
-                    handleNutritionInputChange(
-                      "fatPer100g",
-                      event,
-                      fatRegistration.onChange,
-                    )
-                  }
-                  placeholder="65.2"
-                  type="text"
-                />
-              </label>
-            </FieldError>
+            <NutritionInputField
+              error={getFieldError("caloriesPer100g")}
+              field="caloriesPer100g"
+              label="Calories per 100 g"
+              onValueChange={handleNutritionInputChange}
+              placeholder="654"
+              registration={caloriesRegistration}
+              variant="calories"
+            />
+            <NutritionInputField
+              error={getFieldError("proteinPer100g")}
+              field="proteinPer100g"
+              label="Protein"
+              onValueChange={handleNutritionInputChange}
+              placeholder="15.2"
+              registration={proteinRegistration}
+              variant="protein"
+            />
+            <NutritionInputField
+              error={getFieldError("carbohydratesPer100g")}
+              field="carbohydratesPer100g"
+              label="Carbohydrates"
+              onValueChange={handleNutritionInputChange}
+              placeholder="13.7"
+              registration={carbohydratesRegistration}
+              variant="carbs"
+            />
+            <NutritionInputField
+              error={getFieldError("fatPer100g")}
+              field="fatPer100g"
+              label="Fat"
+              onValueChange={handleNutritionInputChange}
+              placeholder="65.2"
+              registration={fatRegistration}
+              variant="fat"
+            />
           </div>
-          <label className="flex min-h-12 items-center gap-3 rounded-md border border-border bg-background px-3">
+          <label className="flex min-h-12 items-center gap-3 rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 shadow-sm transition hover:border-[rgb(var(--field-neutral-border-hover))] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15">
             <input className="h-5 w-5 accent-primary" type="checkbox" {...register("isFavorite")} />
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
               <Heart aria-hidden="true" className="h-4 w-4" />
@@ -407,7 +375,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
             <label className="block">
               <span className="text-sm font-semibold">Notes</span>
               <textarea
-                className="mt-2 min-h-28 w-full resize-y rounded-md border border-border bg-background px-3 py-3 outline-none transition focus:border-primary"
+                className={neutralTextareaClassName}
                 placeholder="Optional details"
                 {...register("notes")}
               />
@@ -424,11 +392,71 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
   );
 }
 
+function NutritionInputField({
+  error,
+  field,
+  label,
+  onValueChange,
+  placeholder,
+  registration,
+  variant,
+}: {
+  error?: string;
+  field: NutritionFieldName;
+  label: string;
+  onValueChange: (
+    field: NutritionFieldName,
+    event: ChangeEvent<HTMLInputElement>,
+    onChange: (event: ChangeEvent<HTMLInputElement>) => void,
+  ) => void;
+  placeholder: string;
+  registration: UseFormRegisterReturn<NutritionFieldName>;
+  variant: NutrientVariant;
+}) {
+  const errorId = `${field}-error`;
+
+  return (
+    <label className="block">
+      <span
+        className="text-sm font-semibold"
+        style={{ color: nutrientPalette[variant].color }}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          "relative mt-2 flex min-h-12 w-full items-center overflow-hidden rounded-md border-2 px-3 shadow-sm transition before:pointer-events-none before:absolute before:inset-0 focus-within:ring-4",
+          error
+            ? "border-coral bg-coral/5 before:bg-none focus-within:border-coral focus-within:ring-coral/15"
+            : "border-[var(--nutrient-input-border)] bg-[var(--nutrient-input-bg)] before:[background-image:var(--nutrient-input-pattern)] focus-within:border-[var(--nutrient-input-border-focus)] focus-within:ring-[var(--nutrient-input-ring)]",
+        )}
+        style={getNutrientInputStyleVariables(variant)}
+      >
+        <input
+          {...registration}
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
+          className="relative z-10 min-w-0 flex-1 bg-transparent py-2.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
+          inputMode="decimal"
+          onChange={(event) => onValueChange(field, event, registration.onChange)}
+          placeholder={placeholder}
+          type="text"
+        />
+      </span>
+      {error ? (
+        <span className="mt-2 block text-sm text-coral" id={errorId} role="alert">
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
 function FieldError({
   children,
   message,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   message?: string;
 }) {
   return (
@@ -447,7 +475,7 @@ function SubmitButton({
   children,
   disabled = false,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   disabled?: boolean;
 }) {
   const { pending } = useFormStatus();

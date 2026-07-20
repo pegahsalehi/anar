@@ -100,6 +100,22 @@ export function getNutrientStyleVariables(variant: NutrientVariant) {
   } as CSSProperties;
 }
 
+export function getNutrientInputStyleVariables(variant: NutrientVariant) {
+  const color = nutrientPalette[variant].color;
+
+  return {
+    ...getNutrientStyleVariables(variant),
+    "--nutrient-input-bg": withAlpha(color, 0.045),
+    "--nutrient-input-border": withAlpha(color, 0.56),
+    "--nutrient-input-border-focus": withAlpha(color, 0.78),
+    "--nutrient-input-ring": withAlpha(color, 0.15),
+    "--nutrient-input-pattern": `repeating-linear-gradient(135deg, ${withAlpha(
+      color,
+      0.045,
+    )} 0 1px, transparent 1px 8px)`,
+  } as CSSProperties;
+}
+
 export function getNutrientTint(variant: NutrientVariant, alpha: number) {
   return withAlpha(nutrientPalette[variant].color, alpha);
 }

@@ -16,6 +16,8 @@
   --surface-soft: 247 248 246;
   --surface-muted: 241 244 242;
   --soft-border: 226 231 228;
+  --field-neutral-border: 221 228 224;
+  --field-neutral-border-hover: 199 210 204;
   --effective-badge: 233 248 242;
   --effective-badge-border: 188 235 216;
   --effective-badge-foreground: 33 122 91;
@@ -26,14 +28,6 @@
   --fresh: 85 220 164;
   --fresh-foreground: 16 42 67;
   --ring: 85 220 164;
-  --ambient-cyan: 0 216 255;
-  --ambient-blob-blur: 112px;
-  --ambient-mint-opacity: 0.058;
-  --ambient-coral-opacity: 0.045;
-  --ambient-cyan-opacity: 0.05;
-  --ambient-duration-mint: 28s;
-  --ambient-duration-coral: 30s;
-  --ambient-duration-cyan: 24s;
 }
 
 * {
@@ -76,126 +70,6 @@ a {
   background: rgb(var(--primary) / 0.22);
 }
 
-.ambient-background {
-  pointer-events: none;
-  position: fixed;
-  inset-block: 0;
-  left: 0;
-  right: 0;
-  z-index: 0;
-  overflow: hidden;
-  contain: paint;
-}
-
-.ambient-blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(var(--ambient-blob-blur));
-  opacity: 0.05;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
-}
-
-.ambient-blob--mint {
-  top: -7rem;
-  right: -8rem;
-  width: clamp(20rem, 34vw, 32rem);
-  height: clamp(20rem, 34vw, 32rem);
-  animation: ambient-drift-mint var(--ambient-duration-mint) ease-in-out infinite alternate;
-  background:
-    radial-gradient(
-      circle at 48% 52%,
-      rgb(var(--primary) / 0.9) 0%,
-      rgb(var(--primary) / 0.38) 48%,
-      rgb(var(--primary) / 0) 74%
-    );
-  opacity: var(--ambient-mint-opacity);
-}
-
-.ambient-blob--coral {
-  bottom: -11rem;
-  left: -10rem;
-  width: clamp(22rem, 38vw, 34rem);
-  height: clamp(22rem, 38vw, 34rem);
-  animation: ambient-drift-coral var(--ambient-duration-coral) ease-in-out infinite alternate;
-  background:
-    radial-gradient(
-      circle at 52% 48%,
-      rgb(var(--coral) / 0.72) 0%,
-      rgb(var(--coral) / 0.24) 52%,
-      rgb(var(--coral) / 0) 75%
-    );
-  opacity: var(--ambient-coral-opacity);
-}
-
-.ambient-blob--cyan {
-  top: 34%;
-  right: -12rem;
-  width: clamp(18rem, 30vw, 28rem);
-  height: clamp(18rem, 30vw, 28rem);
-  animation: ambient-drift-cyan var(--ambient-duration-cyan) ease-in-out infinite alternate;
-  background:
-    radial-gradient(
-      circle at 48% 50%,
-      rgb(var(--ambient-cyan) / 0.72) 0%,
-      rgb(var(--ambient-cyan) / 0.25) 50%,
-      rgb(var(--ambient-cyan) / 0) 76%
-    );
-  opacity: var(--ambient-cyan-opacity);
-}
-
-.app-page-enter {
-  animation: app-page-enter 360ms ease-out both;
-}
-
-@keyframes ambient-drift-mint {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-34px, 28px, 0);
-  }
-}
-
-@keyframes ambient-drift-coral {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(32px, -26px, 0);
-  }
-}
-
-@keyframes ambient-drift-cyan {
-  from {
-    transform: translate3d(0, -12px, 0) scale(1);
-  }
-
-  to {
-    transform: translate3d(0, 24px, 0) scale(1.025);
-  }
-}
-
-@keyframes app-page-enter {
-  from {
-    opacity: 0.01;
-    transform: translate3d(0, 8px, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@media (min-width: 1024px) {
-  .ambient-background {
-    left: 18rem;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -204,15 +78,5 @@ a {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .ambient-blob,
-  .app-page-enter {
-    animation: none !important;
-    transform: none !important;
-  }
-
-  .app-page-enter {
-    opacity: 1 !important;
   }
 }
