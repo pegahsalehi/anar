@@ -15,12 +15,23 @@ export type ProfilePageData = {
   error: string | null;
 };
 
-export type ProfileIdentityField = "displayName" | "avatarId";
+export type ProfileIdentityField = "displayName" | "email" | "avatarId";
+
+export type ProfileIdentityValues = {
+  avatarId: AvatarId;
+  displayName: string;
+  email: string;
+};
 
 export type ProfileIdentityActionState = {
   status: "idle" | "error" | "success";
   message: string | null;
   fieldErrors: Partial<Record<ProfileIdentityField, string>>;
+  emailConfirmationRequired?: boolean;
+  emailError?: string | null;
+  profile?: ProfileIdentityValues;
+  profileError?: string | null;
+  profileUpdated?: boolean;
 };
 
 export const initialProfileIdentityActionState: ProfileIdentityActionState = {

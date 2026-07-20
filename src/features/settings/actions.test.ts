@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  AppPreferenceActionState,
-  DailyNutritionTargetActionState,
-} from "@/features/settings/types";
+import type { DailyNutritionTargetActionState } from "@/features/settings/types";
 
 const { createServerSupabaseClientMock, revalidatePathMock } = vi.hoisted(() => ({
   createServerSupabaseClientMock: vi.fn(),
@@ -169,62 +166,6 @@ describe("saveDailyNutritionTargetsAction", () => {
   });
 });
 
-describe("saveAppPreferencesAction", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("saves app preferences for the authenticated user and revalidates dependent pages", async () => {
-    const updateMock = vi.fn(() => ({ error: null }));
-    const supabase = createSettingsSupabaseMock({
-      insertMock: vi.fn(),
-      maybeSingleMock: vi.fn(),
-      updateMock,
-      user: { id: "user-1" },
-    });
-    createServerSupabaseClientMock.mockResolvedValue(supabase);
-
-    const formData = new FormData();
-    formData.set("weekStartsOn", "sunday");
-    formData.set("timeFormat", "24h");
-
-    const result = await savePreferences(formData);
-
-    expect(result).toEqual({
-      status: "success",
-      message: "App preferences saved.",
-      fieldErrors: {},
-    });
-    expect(updateMock).toHaveBeenCalledWith({
-      week_starts_on: "sunday",
-      time_format: "24h",
-    });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/settings");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/today");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/history");
-  });
-
-  it("rejects invalid app preferences before touching Supabase", async () => {
-    const formData = new FormData();
-    formData.set("weekStartsOn", "friday");
-    formData.set("timeFormat", "24h");
-
-    const result = await savePreferences(formData);
-
-    expect(result.status).toBe("error");
-    expect(result.message).toBe("Please fix the highlighted fields.");
-    expect(result.fieldErrors.weekStartsOn).toBe(
-      "Choose whether weeks start on Sunday or Monday.",
-    );
-    expect(createServerSupabaseClientMock).not.toHaveBeenCalled();
-  });
-});
-
 async function save(formData: FormData) {
   const { saveDailyNutritionTargetsAction } = await import("@/features/settings/actions");
   const previousState: DailyNutritionTargetActionState = {
@@ -234,17 +175,6 @@ async function save(formData: FormData) {
   };
 
   return saveDailyNutritionTargetsAction(previousState, formData);
-}
-
-async function savePreferences(formData: FormData) {
-  const { saveAppPreferencesAction } = await import("@/features/settings/actions");
-  const previousState: AppPreferenceActionState = {
-    status: "idle",
-    message: null,
-    fieldErrors: {},
-  };
-
-  return saveAppPreferencesAction(previousState, formData);
 }
 
 function formDataWithTargets(overrides: Record<string, string> = {}) {

@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { AppPreferencesForm } from "@/features/settings/components/app-preferences-form";
 import { DailyNutritionTargetsForm } from "@/features/settings/components/daily-nutrition-targets-form";
 import { SettingsAccordionCard } from "@/features/settings/components/settings-accordion-card";
 import { getSettingsPageData } from "@/features/settings/queries";
@@ -15,7 +14,7 @@ export default async function SettingsPage() {
     <div className="space-y-7">
       <PageHeader
         title="Settings"
-        description="Manage nutrition targets, app preferences, and privacy."
+        description="Manage nutrition targets and privacy."
       />
 
       {data.error ? (
@@ -32,7 +31,6 @@ export default async function SettingsPage() {
           effectiveDate={data.effectiveDate}
           initialValues={data.dailyGoals}
         />
-        <AppPreferencesForm initialValues={data.preferences} />
         <SettingsAccordionCard
           description="Learn how your data and nutrition totals are handled."
           summary="User-entered nutrition values, account-scoped data, and no medical advice."
@@ -44,8 +42,8 @@ export default async function SettingsPage() {
               those user-entered values.
             </p>
             <p>
-              Your foods, logs, targets, and preferences are scoped to your
-              authenticated account.
+              Your foods, logs, and targets are scoped to your authenticated
+              account.
             </p>
             <p>
               Anar helps with tracking and does not provide medical advice.

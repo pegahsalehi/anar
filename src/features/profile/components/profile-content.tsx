@@ -7,6 +7,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type RefObject,
 } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ import { saveProfileIdentityAction } from "@/features/profile/actions";
 import { ProfilePasswordForm } from "@/features/profile/components/profile-password-form";
 import {
   initialProfileIdentityActionState,
+  type ProfileIdentityValues,
   type ProfilePageData,
   type ProfileStatsData,
 } from "@/features/profile/types";
@@ -31,18 +33,22 @@ type ProfileContentProps = {
   data: ProfilePageData;
 };
 
-type ProfileIdentityValues = {
-  avatarId: AvatarId;
-  displayName: string;
-};
-
 export function ProfileContent({ data }: ProfileContentProps) {
-  const [identity, setIdentity] = useState<ProfileIdentityValues>({
+  const [profile, setProfile] = useState<ProfileIdentityValues>({
     avatarId: data.avatarId,
     displayName: data.displayName,
+    email: data.email,
   });
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setProfile({
+      avatarId: data.avatarId,
+      displayName: data.displayName,
+      email: data.email,
+    });
+  }, [data.avatarId, data.displayName, data.email]);
 
   function openEditor() {
     setIsEditorOpen(true);
@@ -51,28 +57,28 @@ export function ProfileContent({ data }: ProfileContentProps) {
   return (
     <>
       <ProfileHeader
-        avatarId={identity.avatarId}
-        displayName={identity.displayName}
+        avatarId={profile.avatarId}
+        displayName={profile.displayName}
         memberSince={data.memberSince}
         onEdit={openEditor}
       />
       <ProfileStats stats={data.stats} />
       <PersonalInformationCard
-        displayName={identity.displayName}
-        email={data.email}
+        displayName={profile.displayName}
+        email={profile.email}
         memberSince={data.memberSince}
-        onEdit={openEditor}
       />
       <AccountSecurityCard />
-      <ProfileEditorModal
-        initialValues={identity}
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        onSaved={(nextIdentity, message) => {
-          setIdentity(nextIdentity);
-          setToastMessage(message);
-        }}
-      />
+      {isEditorOpen ? (
+        <ProfileEditorModal
+          initialValues={profile}
+          onClose={() => setIsEditorOpen(false)}
+          onSaved={(nextProfile, message) => {
+            setProfile(nextProfile);
+            setToastMessage(message);
+          }}
+        />
+      ) : null}
       {toastMessage ? (
         <ProfileToast message={toastMessage} onDismiss={() => setToastMessage(null)} />
       ) : null}
@@ -156,29 +162,18 @@ function PersonalInformationCard({
   displayName,
   email,
   memberSince,
-  onEdit,
 }: {
   displayName: string;
   email: string;
   memberSince: string;
-  onEdit: () => void;
 }) {
   return (
     <section className="rounded-md border border-border bg-card p-5 shadow-sm sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-card-foreground">Personal information</h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Keep your profile name and avatar up to date.
-          </p>
-        </div>
-        <button
-          className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/50 hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          onClick={onEdit}
-          type="button"
-        >
-          Edit
-        </button>
+      <div>
+        <h2 className="text-lg font-semibold text-card-foreground">Personal information</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Review the account details connected to your profile.
+        </p>
       </div>
       <dl className="mt-5 grid gap-4 text-sm md:grid-cols-3">
         <InfoItem label="Display name" value={displayName} />
@@ -213,12 +208,10 @@ function AccountSecurityCard() {
 
 function ProfileEditorModal({
   initialValues,
-  isOpen,
   onClose,
   onSaved,
 }: {
   initialValues: ProfileIdentityValues;
-  isOpen: boolean;
   onClose: () => void;
   onSaved: (values: ProfileIdentityValues, message: string) => void;
 }) {
@@ -227,53 +220,81 @@ function ProfileEditorModal({
     initialProfileIdentityActionState,
   );
   const [draftValues, setDraftValues] = useState(initialValues);
-  const pendingValuesRef = useRef<ProfileIdentityValues | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const avatarGroupRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const processedProfileStateRef = useRef<ProfileIdentityValues | null>(null);
   const router = useRouter();
   const hasChanges =
     draftValues.avatarId !== initialValues.avatarId ||
-    draftValues.displayName !== initialValues.displayName;
+    draftValues.displayName.trim() !== initialValues.displayName ||
+    normalizeEmail(draftValues.email) !== normalizeEmail(initialValues.email);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
     previousFocusRef.current = document.activeElement as HTMLElement | null;
-    setDraftValues(initialValues);
     window.requestAnimationFrame(() => nameInputRef.current?.focus());
 
     return () => {
       previousFocusRef.current?.focus();
     };
-  }, [initialValues, isOpen]);
+  }, []);
 
   useEffect(() => {
-    if (state.status === "success" && pendingValuesRef.current) {
-      const nextValues = pendingValuesRef.current;
-      pendingValuesRef.current = null;
-      onSaved(nextValues, state.message ?? "Profile saved.");
-      onClose();
-      router.refresh();
+    if (!state.profile || processedProfileStateRef.current === state.profile) {
+      return;
     }
-  }, [onClose, onSaved, router, state.message, state.status]);
+
+    const shouldApplyProfile = state.status === "success" || state.profileUpdated;
+
+    if (!shouldApplyProfile) {
+      return;
+    }
+
+    processedProfileStateRef.current = state.profile;
+    onSaved(
+      state.profile,
+      state.status === "success" ? (state.message ?? "Profile saved.") : "Profile details saved.",
+    );
+    router.refresh();
+
+    if (state.status === "success") {
+      onClose();
+    }
+  }, [onClose, onSaved, router, state.message, state.profile, state.profileUpdated, state.status]);
+
+  useEffect(() => {
+    if (state.status !== "error") {
+      return;
+    }
+
+    if (state.fieldErrors.displayName) {
+      nameInputRef.current?.focus();
+      return;
+    }
+
+    if (state.fieldErrors.email) {
+      emailInputRef.current?.focus();
+      return;
+    }
+
+    if (state.fieldErrors.avatarId) {
+      (
+        avatarGroupRef.current?.querySelector<HTMLButtonElement>(
+          '[data-avatar-button="selected"]',
+        ) ?? avatarGroupRef.current?.querySelector<HTMLButtonElement>("[data-avatar-button]")
+      )?.focus();
+    }
+  }, [state.fieldErrors, state.status]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!hasChanges) {
       event.preventDefault();
-      return;
     }
-
-    pendingValuesRef.current = {
-      avatarId: draftValues.avatarId,
-      displayName: draftValues.displayName.trim(),
-    };
   }
 
   function handleCancel() {
-    pendingValuesRef.current = null;
     setDraftValues(initialValues);
     onClose();
   }
@@ -305,10 +326,6 @@ function ProfileEditorModal({
     }
   }
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
     <div
       aria-labelledby="profile-editor-title"
@@ -332,7 +349,7 @@ function ProfileEditorModal({
               Edit profile
             </h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Choose your display name and one of nine avatars.
+              Update your display name, email, and avatar.
             </p>
           </div>
           <button
@@ -351,6 +368,11 @@ function ProfileEditorModal({
               {state.message}
             </p>
           ) : null}
+          {state.profileError && state.profileError !== state.message ? (
+            <p className="mt-3 rounded-md border border-coral/25 bg-coral/10 px-3.5 py-3 text-sm font-medium text-coral" role="alert">
+              {state.profileError}
+            </p>
+          ) : null}
 
           <label className="mt-5 block">
             <span className="text-sm font-semibold text-foreground">Display name</span>
@@ -362,12 +384,14 @@ function ProfileEditorModal({
                 state.fieldErrors.displayName && "border-coral focus:border-coral focus:ring-coral/15",
               )}
               name="displayName"
-              onChange={(event) =>
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+
                 setDraftValues((current) => ({
                   ...current,
-                  displayName: event.currentTarget.value,
-                }))
-              }
+                  displayName: value,
+                }));
+              }}
               ref={nameInputRef}
               value={draftValues.displayName}
             />
@@ -382,14 +406,49 @@ function ProfileEditorModal({
             ) : null}
           </label>
 
+          <label className="mt-5 block">
+            <span className="text-sm font-semibold text-foreground">Email</span>
+            <input
+              aria-describedby={state.fieldErrors.email ? "profile-email-error" : undefined}
+              aria-invalid={Boolean(state.fieldErrors.email)}
+              autoComplete="email"
+              className={cn(
+                "mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15",
+                state.fieldErrors.email && "border-coral focus:border-coral focus:ring-coral/15",
+              )}
+              name="email"
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+
+                setDraftValues((current) => ({
+                  ...current,
+                  email: value,
+                }));
+              }}
+              ref={emailInputRef}
+              type="email"
+              value={draftValues.email}
+            />
+            {state.fieldErrors.email ? (
+              <span
+                className="mt-1.5 block text-xs font-medium text-coral"
+                id="profile-email-error"
+                role="alert"
+              >
+                {state.fieldErrors.email}
+              </span>
+            ) : null}
+          </label>
+
           <AvatarPicker
             error={state.fieldErrors.avatarId}
-            onChange={(avatarId) =>
+            onChange={(avatarId) => {
               setDraftValues((current) => ({
                 ...current,
                 avatarId,
-              }))
-            }
+              }));
+            }}
+            groupRef={avatarGroupRef}
             value={draftValues.avatarId}
           />
 
@@ -411,44 +470,44 @@ function ProfileEditorModal({
 
 function AvatarPicker({
   error,
+  groupRef,
   onChange,
   value,
 }: {
   error?: string;
+  groupRef: RefObject<HTMLDivElement | null>;
   onChange: (avatarId: AvatarId) => void;
   value: AvatarId;
 }) {
   return (
     <fieldset className="mt-5">
       <legend className="text-sm font-semibold text-foreground">Avatar</legend>
+      <input name="avatarId" type="hidden" value={value} />
       <div
         aria-describedby={error ? "profile-avatar-error" : undefined}
         className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"
+        ref={groupRef}
       >
         {avatarOptions.map((avatar) => {
           const isSelected = avatar.id === value;
 
           return (
-            <label
+            <button
+              aria-pressed={isSelected}
               className={cn(
-                "flex cursor-pointer flex-col items-center gap-2 rounded-md border bg-surface-soft p-3 text-center text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-sm focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-card",
+                "flex cursor-pointer flex-col items-center gap-2 rounded-md border bg-surface-soft p-3 text-center text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                 isSelected
                   ? "scale-[1.02] border-primary bg-primary/10 text-foreground shadow-sm"
                   : "border-soft-border text-muted-foreground hover:border-primary/45 hover:bg-card hover:text-foreground",
               )}
+              data-avatar-button={isSelected ? "selected" : "option"}
               key={avatar.id}
+              onClick={() => onChange(avatar.id)}
+              type="button"
             >
-              <input
-                checked={isSelected}
-                className="sr-only"
-                name="avatarId"
-                onChange={() => onChange(avatar.id)}
-                type="radio"
-                value={avatar.id}
-              />
               <UserAvatar avatarId={avatar.id} isSelected={isSelected} size="lg" />
               <span>{avatar.label}</span>
-            </label>
+            </button>
           );
         })}
       </div>
@@ -542,6 +601,10 @@ function formatReadableDate(value: string) {
     month: "long",
     year: "numeric",
   }).format(date);
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function getFocusableElements(element: HTMLElement) {

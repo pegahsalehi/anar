@@ -2,7 +2,6 @@ import { getLocalISODate } from "@/lib/dates";
 import { defaultDailyGoals } from "@/lib/nutrition";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
-  AppPreferenceValues,
   DailyNutritionTargetValues,
   SettingsPageData,
 } from "@/features/settings/types";
@@ -13,7 +12,7 @@ const settingsDataLoadError = "Settings data could not be loaded. Please try aga
 
 type ProfileTimezoneRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
-  "timezone" | "week_starts_on" | "time_format"
+  "timezone"
 >;
 
 type GoalRow = Pick<
@@ -35,7 +34,6 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
     return {
       dailyGoals: getDefaultDailyNutritionTargets(),
       effectiveDate: "",
-      preferences: getDefaultAppPreferences(),
       error: settingsDataLoadError,
     };
   }
@@ -44,14 +42,13 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
     return {
       dailyGoals: getDefaultDailyNutritionTargets(),
       effectiveDate: "",
-      preferences: getDefaultAppPreferences(),
       error: null,
     };
   }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("timezone, week_starts_on, time_format")
+    .select("timezone")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -71,7 +68,6 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
       ? getDailyNutritionTargets(goal as GoalRow)
       : getDefaultDailyNutritionTargets(),
     effectiveDate: localDate,
-    preferences: getAppPreferences(profileRow),
     error: [profileError, goalError].some(isRealSupabaseRequestError)
       ? settingsDataLoadError
       : null,
@@ -93,19 +89,5 @@ function getDefaultDailyNutritionTargets(): DailyNutritionTargetValues {
     proteinTarget: defaultDailyGoals.proteinTarget,
     carbohydratesTarget: defaultDailyGoals.carbohydratesTarget,
     fatTarget: defaultDailyGoals.fatTarget,
-  };
-}
-
-function getAppPreferences(profile: ProfileTimezoneRow | null): AppPreferenceValues {
-  return {
-    weekStartsOn: profile?.week_starts_on ?? "monday",
-    timeFormat: profile?.time_format ?? "12h",
-  };
-}
-
-function getDefaultAppPreferences(): AppPreferenceValues {
-  return {
-    weekStartsOn: "monday",
-    timeFormat: "12h",
   };
 }

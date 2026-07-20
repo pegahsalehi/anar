@@ -257,7 +257,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               <img alt={`${title} preview`} className="h-full w-full object-cover" src={previewUrl} />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
-                <ImagePlus aria-hidden="true" className="h-9 w-9" />
+                <ImagePlus aria-hidden="true" className="h-9 w-9 text-primary" />
                 <span className="text-sm font-medium">No image selected</span>
               </div>
             )}
@@ -326,11 +326,14 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               />
             </label>
           </FieldError>
+          <p className="text-xs font-semibold leading-5 text-muted-foreground">
+            Enter values per 100 g
+          </p>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <NutritionInputField
               error={getFieldError("caloriesPer100g")}
               field="caloriesPer100g"
-              label="Calories per 100 g"
+              label="Calories"
               onValueChange={handleNutritionInputChange}
               placeholder="654"
               registration={caloriesRegistration}
@@ -425,10 +428,10 @@ function NutritionInputField({
       </span>
       <span
         className={cn(
-          "relative mt-2 flex min-h-12 w-full items-center overflow-hidden rounded-md border-2 px-3 shadow-sm transition before:pointer-events-none before:absolute before:inset-0 focus-within:ring-4",
+          "mt-2 flex min-h-12 w-full items-center rounded-md border-2 px-3 shadow-sm transition focus-within:ring-4",
           error
-            ? "border-coral bg-coral/5 before:bg-none focus-within:border-coral focus-within:ring-coral/15"
-            : "border-[var(--nutrient-input-border)] bg-[var(--nutrient-input-bg)] before:[background-image:var(--nutrient-input-pattern)] focus-within:border-[var(--nutrient-input-border-focus)] focus-within:ring-[var(--nutrient-input-ring)]",
+            ? "border-coral bg-coral/5 focus-within:border-coral focus-within:ring-coral/15"
+            : "border-[var(--nutrient-input-border)] bg-[var(--nutrient-input-bg)] shadow-[var(--nutrient-input-shadow)] focus-within:border-[var(--nutrient-input-border-focus)] focus-within:ring-[var(--nutrient-input-ring)]",
         )}
         style={getNutrientInputStyleVariables(variant)}
       >
@@ -436,7 +439,7 @@ function NutritionInputField({
           {...registration}
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
-          className="relative z-10 min-w-0 flex-1 bg-transparent py-2.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent py-2.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
           inputMode="decimal"
           onChange={(event) => onValueChange(field, event, registration.onChange)}
           placeholder={placeholder}

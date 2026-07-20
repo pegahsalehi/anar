@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  appPreferencesSchema,
   changePasswordSchema,
   dailyNutritionTargetsSchema,
 } from "@/features/settings/schemas";
@@ -61,19 +60,4 @@ describe("settings schemas", () => {
     ).toBe(true);
   });
 
-  it("validates persisted app preferences", () => {
-    expect(
-      appPreferencesSchema.safeParse({
-        weekStartsOn: "monday",
-        timeFormat: "24h",
-      }).success,
-    ).toBe(true);
-
-    expect(
-      appPreferencesSchema.safeParse({
-        weekStartsOn: "friday",
-        timeFormat: "military",
-      }).success,
-    ).toBe(false);
-  });
 });

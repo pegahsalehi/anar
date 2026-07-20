@@ -37,12 +37,3 @@ export const changePasswordSchema = z
     message: "Passwords do not match.",
     path: ["confirmNewPassword"],
   });
-
-export const appPreferencesSchema = z.object({
-  weekStartsOn: z.enum(["sunday", "monday"], {
-    error: "Choose whether weeks start on Sunday or Monday.",
-  }),
-  timeFormat: z.enum(["12h", "24h"], {
-    error: "Choose a time format.",
-  }),
-});

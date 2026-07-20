@@ -18,6 +18,7 @@ import {
   type TodayFoodOption,
 } from "@/features/today/types";
 import { formatCalories, formatDecimal } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type TodayDashboardProps = {
   data: TodayDashboardData;
@@ -40,14 +41,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         title="How is today going?"
         description="Track today's intake, review nutrition target progress, and log favorite foods quickly."
         action={
-          <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
-            onClick={() => openLogDialog()}
-            type="button"
-          >
-            <Plus aria-hidden="true" className="h-5 w-5" />
-            Add food
-          </button>
+          <AddFoodButton onClick={() => openLogDialog()} />
         }
       />
 
@@ -70,22 +64,20 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
           </span>
         </div>
         {data.logs.length > 0 ? (
-          <div className="grid gap-3">
-            {data.logs.map((log) => (
-              <FoodLogItem key={log.id} log={log} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-3">
+              {data.logs.map((log) => (
+                <FoodLogItem key={log.id} log={log} />
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <AddFoodButton className="w-full sm:w-auto" onClick={() => openLogDialog()} />
+            </div>
+          </>
         ) : (
           <IllustratedEmptyState
             action={
-              <button
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
-                onClick={() => openLogDialog()}
-                type="button"
-              >
-                <Plus aria-hidden="true" className="h-5 w-5" />
-                Add food
-              </button>
+              <AddFoodButton onClick={() => openLogDialog()} />
             }
             title="Nothing logged yet"
             description="Add the first food for today and your totals will update here."
@@ -149,6 +141,28 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         selectedFoodId={selectedFoodId}
       />
     </div>
+  );
+}
+
+function AddFoodButton({
+  className,
+  onClick,
+}: {
+  className?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={cn(
+        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]",
+        className,
+      )}
+      onClick={onClick}
+      type="button"
+    >
+      <Plus aria-hidden="true" className="h-5 w-5" />
+      Add food
+    </button>
   );
 }
 

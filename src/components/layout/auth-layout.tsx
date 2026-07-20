@@ -5,15 +5,15 @@ import { AuthBrandLogo } from "@/components/layout/auth-brand-logo";
 
 const benefits: Array<{ title: string; icon: LucideIcon }> = [
   {
-    title: "Fast meal logging",
-    icon: Timer,
-  },
-  {
-    title: "Private nutrition history",
+    title: "Your own food library",
     icon: ShieldCheck,
   },
   {
-    title: "Clear daily progress",
+    title: "Faster everyday logging",
+    icon: Timer,
+  },
+  {
+    title: "Nutrition without the clutter",
     icon: ChartNoAxesColumnIncreasing,
   },
 ];
@@ -29,11 +29,11 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <div className="grid flex-1 items-center gap-8 py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(24rem,28rem)] lg:gap-16">
           <section className="relative hidden min-h-[34rem] max-w-xl flex-col justify-center lg:flex">
             <h1 className="max-w-lg text-5xl font-semibold leading-[1.04] text-[#12352A]">
-              Small logs. Better habits.
+              Made for the meals you actually eat.
             </h1>
             <p className="mt-6 max-w-md text-lg leading-8 text-[#51685D]">
-              Track your meals, understand your nutrition, and build healthier days one step at a
-              time.
+              Save your everyday meals, homemade recipes, and local foods in one personal library.
+              Add them once, then log them again in seconds.
             </p>
             <ul className="mt-10 grid gap-4">
               {benefits.map((benefit) => (

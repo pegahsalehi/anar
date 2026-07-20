@@ -70,7 +70,7 @@ const cardThemes: Record<NutritionKind, CardTheme> = {
     accent: nutrientPalette.fat.color,
     bar: nutrientPalette.fat.color,
     border: "rgb(232 237 233 / 1)",
-    descriptor: "Vitamin Absorption",
+    descriptor: "Hormones",
     glow: "rgb(255 145 0 / 0.11)",
     icon: Droplet,
     surface: "#FFFFFF",
