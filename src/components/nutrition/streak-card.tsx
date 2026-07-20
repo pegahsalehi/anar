@@ -23,30 +23,30 @@ export function StreakCard({
   return (
     <article
       aria-label={`Logging streak: ${formatInteger(currentStreak)} ${dayLabel.toLowerCase()}`}
-      className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#07111F] p-4 text-white shadow-[0_16px_34px_rgb(16_42_67_/_0.2),0_0_26px_rgb(85_220_164_/_0.08)] sm:p-5 lg:px-6 lg:py-5"
+      className="relative overflow-hidden rounded-[18px] border border-white/10 bg-[#07111F] p-3.5 text-white shadow-[0_16px_34px_rgb(16_42_67_/_0.2),0_0_26px_rgb(85_220_164_/_0.08)] sm:rounded-[22px] sm:p-5 lg:px-6 lg:py-5"
       style={{
         background:
           "linear-gradient(135deg, rgba(85, 220, 164, 0.16) 0%, rgba(85, 220, 164, 0) 28%), linear-gradient(315deg, rgba(226, 231, 228, 0.1) 0%, rgba(226, 231, 228, 0) 30%), #07111F",
       }}
     >
       <StreakDecorations />
-      <div className="relative z-10 grid gap-5 lg:grid-cols-[1fr_14rem] lg:items-center lg:gap-6">
+      <div className="relative z-10 grid gap-4 sm:gap-5 lg:grid-cols-[1fr_14rem] lg:items-center lg:gap-6">
         <div className="min-w-0">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#55DCA4]/[0.5] bg-[#55DCA4]/10 text-[#7CF7C3] shadow-[0_0_20px_rgb(85_220_164_/_0.24)] sm:h-14 sm:w-14">
-              <Zap aria-hidden="true" className="h-6 w-6 fill-current sm:h-7 sm:w-7" strokeWidth={1.8} />
+          <div className="flex items-start gap-3 sm:gap-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#55DCA4]/[0.5] bg-[#55DCA4]/10 text-[#7CF7C3] shadow-[0_0_20px_rgb(85_220_164_/_0.24)] sm:h-14 sm:w-14">
+              <Zap aria-hidden="true" className="h-5 w-5 fill-current sm:h-7 sm:w-7" strokeWidth={1.8} />
             </span>
             <div className="min-w-0">
-              <h2 className="text-xl font-semibold leading-tight sm:text-2xl">
+              <h2 className="text-lg font-semibold leading-tight sm:text-2xl">
                 Logging streak
               </h2>
-              <p className="mt-1.5 max-w-2xl text-sm font-normal leading-6 text-white/60 sm:text-[0.95rem]">
+              <p className="mt-1 max-w-2xl text-xs font-normal leading-5 text-white/60 sm:mt-1.5 sm:text-[0.95rem] sm:leading-6">
                 {message}
               </p>
             </div>
           </div>
 
-          <ol className="relative mt-5 grid grid-cols-7 gap-1 sm:gap-2">
+          <ol className="relative mt-4 grid grid-cols-7 gap-1 sm:mt-5 sm:gap-2">
             <span
               aria-hidden="true"
               className="absolute left-[7.14%] right-[7.14%] top-2.5 h-px bg-white/[0.15]"
@@ -77,7 +77,7 @@ export function StreakCard({
             ))}
           </ol>
 
-          <div className="mt-5 flex flex-col gap-3 text-white/[0.64] sm:flex-row sm:items-center sm:gap-5">
+          <div className="mt-4 flex flex-col gap-2 text-white/[0.64] sm:mt-5 sm:flex-row sm:items-center sm:gap-5">
             <StreakStat
               icon={<TrendingUp aria-hidden="true" className="h-4 w-4" strokeWidth={2} />}
               label="Longest streak"
@@ -94,12 +94,12 @@ export function StreakCard({
           </div>
         </div>
 
-        <div className="border-t border-white/[0.12] pt-4 lg:border-l lg:border-t-0 lg:py-5 lg:pl-7">
+        <div className="border-t border-white/[0.12] pt-3 sm:pt-4 lg:border-l lg:border-t-0 lg:py-5 lg:pl-7">
           <p className="flex items-end gap-3 leading-none lg:justify-center">
-            <span className="text-5xl font-semibold text-white sm:text-6xl">
+            <span className="text-4xl font-semibold text-white sm:text-6xl">
               {formatInteger(currentStreak)}
             </span>
-            <span className="pb-1.5 text-lg font-semibold text-white/[0.66] sm:text-xl">
+            <span className="pb-1 text-base font-semibold text-white/[0.66] sm:pb-1.5 sm:text-xl">
               {dayLabel}
             </span>
           </p>
@@ -124,7 +124,7 @@ function StreakStat({
     <div className="flex min-w-0 items-center gap-3">
       <span
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-md sm:h-8 sm:w-8",
           tone === "green"
             ? "bg-[#55DCA4]/[0.12] text-[#75F1BD]"
             : "bg-white/[0.08] text-white/[0.74]",
@@ -132,8 +132,8 @@ function StreakStat({
       >
         {icon}
       </span>
-      <span className="min-w-0 text-sm font-medium sm:text-[0.95rem]">{label}</span>
-      <strong className="shrink-0 text-lg font-semibold text-white sm:text-xl">{value}</strong>
+      <span className="min-w-0 text-xs font-medium sm:text-[0.95rem]">{label}</span>
+      <strong className="shrink-0 text-base font-semibold text-white sm:text-xl">{value}</strong>
     </div>
   );
 }

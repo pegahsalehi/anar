@@ -43,7 +43,7 @@ export function DailySummary({ compact = false, progress }: DailySummaryProps) {
     <section
       aria-label="Daily nutrition summary"
       className={cn(
-        "grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4",
+        "grid grid-cols-2 gap-2.5 sm:gap-4 md:gap-5 xl:grid-cols-4",
         compact && "gap-4",
       )}
     >
