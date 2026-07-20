@@ -115,43 +115,43 @@ export function NutritionProgressCard({
   return (
     <article
       aria-label={`${label}: ${formatValue(consumed)} of ${targetLabel}`}
-      className="relative aspect-square overflow-hidden rounded-[24px] border bg-white p-5 shadow-[0_18px_38px_rgb(16_42_67_/_0.08)] sm:p-6"
+      className="relative min-h-[150px] overflow-hidden rounded-[18px] border bg-white p-3.5 shadow-[0_12px_28px_rgb(16_42_67_/_0.07)] sm:min-h-[170px] sm:p-4 md:rounded-[22px] md:p-5 xl:aspect-square xl:min-h-0 xl:rounded-[24px] xl:p-5 min-[1500px]:p-6"
       style={cardStyle}
     >
       <MetricCardDecorations />
       <div className="relative z-10 flex h-full flex-col">
-        <div className="flex items-start justify-between gap-4 pr-14 sm:pr-16">
+        <div className="flex items-start justify-between gap-2 pr-10 sm:pr-12 md:gap-4 md:pr-14 xl:pr-16">
           <div>
-            <h2 className="text-xl font-semibold leading-none text-[var(--metric-title)] sm:text-2xl">
+            <h2 className="text-base font-semibold leading-none text-[var(--metric-title)] sm:text-lg md:text-xl min-[1500px]:text-2xl">
               {label}
             </h2>
-            <p className="mt-3 text-sm font-medium leading-snug text-muted-foreground sm:text-base">
+            <p className="mt-1 text-[0.68rem] font-medium leading-snug text-muted-foreground sm:text-xs md:mt-2 md:text-sm min-[1500px]:text-base">
               {theme.descriptor}
             </p>
             <p className="sr-only">{formatPercent(percentage)} complete</p>
           </div>
         </div>
 
-        <span className="absolute right-1 top-5 flex h-12 w-12 items-center justify-center rounded-[17px] border border-white/85 bg-white/[0.9] text-[var(--metric-accent)] shadow-[0_12px_28px_var(--metric-glow)] backdrop-blur-sm sm:right-2 sm:h-14 sm:w-14 sm:rounded-[19px]">
-          <Icon aria-hidden="true" className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.05} />
+        <span className="absolute right-1.5 top-3 flex h-8 w-8 items-center justify-center rounded-xl border border-white/85 bg-white/[0.9] text-[var(--metric-accent)] shadow-[0_10px_22px_var(--metric-glow)] backdrop-blur-sm sm:right-2 sm:h-9 sm:w-9 md:top-4 md:h-12 md:w-12 md:rounded-[17px] xl:h-14 xl:w-14 xl:rounded-[19px]">
+          <Icon aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 xl:h-7 xl:w-7" strokeWidth={2.05} />
         </span>
 
-        <div className="mt-auto">
-          <div className="space-y-2">
+        <div className="mt-3 xl:mt-auto">
+          <div className="space-y-1.5 md:space-y-2">
             <div className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap">
-              <p className="text-[1.65rem] font-semibold leading-[0.9] text-foreground sm:text-[1.85rem] min-[1500px]:text-[2.05rem]">
+              <p className="min-w-0 truncate text-[1.45rem] font-semibold leading-[0.9] text-foreground sm:text-[1.6rem] md:text-[1.75rem] min-[1500px]:text-[2.05rem]">
                 {value}
               </p>
-              <p className="text-sm font-medium leading-none text-foreground sm:text-base">
+              <p className="text-xs font-medium leading-none text-foreground sm:text-sm md:text-base">
                 {valueUnit}
               </p>
             </div>
-            <p className="whitespace-nowrap text-xs font-medium leading-none text-muted-foreground sm:text-sm">
+            <p className="truncate whitespace-nowrap text-[0.68rem] font-medium leading-none text-muted-foreground sm:text-xs md:text-sm">
               Goal <span className="font-semibold text-foreground">{targetLabel}</span>
             </p>
           </div>
 
-          <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-[var(--metric-track)] sm:mt-6">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--metric-track)] md:mt-5 md:h-2.5 min-[1500px]:mt-6">
             <div
               className="h-full rounded-full"
               style={{
@@ -161,7 +161,7 @@ export function NutritionProgressCard({
             />
           </div>
 
-          <p className="mt-4 max-w-[9.75rem] text-xs font-medium leading-snug text-foreground sm:max-w-[10.75rem] sm:text-sm">
+          <p className="mt-2 max-w-full truncate text-[0.68rem] font-medium leading-snug text-foreground sm:text-xs md:mt-3 md:text-sm xl:max-w-[10.75rem] min-[1500px]:mt-4">
             {statusLabel}
           </p>
         </div>
@@ -218,7 +218,7 @@ function MetricCardDecorations() {
 
 function FoodIllustration({ kind }: { kind: NutritionKind }) {
   const commonClassName =
-    "pointer-events-none absolute bottom-1 right-1 z-0 h-[82px] w-[40%] max-w-[132px] text-[var(--metric-accent)] opacity-[0.2]";
+    "pointer-events-none absolute bottom-0 right-0 z-0 h-[54px] w-[46%] max-w-[86px] text-[var(--metric-accent)] opacity-[0.14] sm:h-[62px] sm:max-w-[98px] md:h-[74px] md:max-w-[116px] md:opacity-[0.18] xl:bottom-1 xl:right-1 xl:h-[82px] xl:max-w-[132px] xl:opacity-[0.2]";
 
   if (kind === "calories") {
     return (

@@ -34,7 +34,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5 sm:space-y-7">
       <PageHeader
         eyebrow={data.displayDate}
         eyebrowClassName="text-[#45B385]"
@@ -51,12 +51,12 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         </p>
       ) : null}
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <StreakCard {...data.streak} />
         <DailySummary progress={data.progress} />
       </div>
 
-      <section className="space-y-4">
+      <section className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-base font-semibold text-foreground">Today&apos;s foods</h2>
           <span className="text-sm text-muted-foreground">
@@ -65,7 +65,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         </div>
         {data.logs.length > 0 ? (
           <>
-            <div className="grid gap-3">
+            <div className="grid gap-2.5 sm:gap-3">
               {data.logs.map((log) => (
                 <FoodLogItem key={log.id} log={log} />
               ))}
@@ -86,7 +86,7 @@ export function TodayDashboard({ data }: TodayDashboardProps) {
         )}
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-base font-semibold text-foreground">Quick access</h2>
           <Link className="text-sm font-semibold text-foreground underline-offset-4 hover:underline" href="/foods">
@@ -154,7 +154,7 @@ function AddFoodButton({
   return (
     <button
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]",
+        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] sm:min-h-12 sm:gap-2 sm:px-5 sm:py-3",
         className,
       )}
       onClick={onClick}
@@ -207,6 +207,7 @@ function LogFoodDialog({
 
   return (
     <div
+      aria-labelledby="log-food-dialog-title"
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 px-4 backdrop-blur-sm"
       onKeyDown={(event) => {
@@ -219,7 +220,9 @@ function LogFoodDialog({
       <div className="w-full max-w-lg rounded-md border border-border bg-card p-5 shadow-soft">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-card-foreground">Log food</h2>
+            <h2 className="text-lg font-semibold text-card-foreground" id="log-food-dialog-title">
+              Log food
+            </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Select a saved food and enter how many grams you consumed.
             </p>

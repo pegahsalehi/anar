@@ -11,7 +11,7 @@ export function ResetPasswordForm() {
   const [state, formAction] = useActionState(resetPasswordAction, initialAuthState);
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form action={formAction} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
       <AuthMessage state={state} />
       <PasswordInputField
         autoComplete="new-password"

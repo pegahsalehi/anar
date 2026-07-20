@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
         description="Enter your account email and we'll send a recovery link if the account exists."
       />
       <ForgotPasswordForm />
-      <Link className="mt-6 inline-flex text-sm font-medium text-[#102A43] underline-offset-4 hover:text-effective-badge-foreground hover:underline" href="/login">
+      <Link className="mt-4 inline-flex text-sm font-medium text-[#102A43] underline-offset-4 hover:text-effective-badge-foreground hover:underline sm:mt-6" href="/login">
         Back to login
       </Link>
     </section>

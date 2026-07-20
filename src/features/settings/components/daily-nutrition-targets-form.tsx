@@ -135,14 +135,14 @@ export function DailyNutritionTargetsForm({
         </span>
       ) : null}
 
-      <form action={formAction} className="mt-5" onSubmit={validateClientForm}>
+      <form action={formAction} className="mt-4 sm:mt-5" onSubmit={validateClientForm}>
         <SettingsActionMessage message={state.message} status={state.status} />
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
           {nutrients.map((nutrient) => (
             <NutrientSurface
               as="section"
-              className="p-4"
+              className="p-3 sm:p-4"
               key={nutrient.variant}
               variant={nutrient.variant}
             >
@@ -152,7 +152,7 @@ export function DailyNutritionTargetsForm({
               >
                 {nutrient.label}
               </h3>
-              <div className="mt-3">
+              <div className="mt-2 sm:mt-3">
                 <GoalInput
                   defaultValue={initialValues[nutrient.name]}
                   error={getFieldError(nutrient.name)}
@@ -166,7 +166,7 @@ export function DailyNutritionTargetsForm({
           ))}
         </div>
 
-        <div className="mt-5 flex justify-end">
+        <div className="mt-4 flex justify-end sm:mt-5">
           <SettingsSubmitButton>Save targets</SettingsSubmitButton>
         </div>
       </form>
@@ -193,10 +193,12 @@ function GoalInput({
 
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+      <span className="text-[0.7rem] font-semibold leading-4 text-muted-foreground sm:text-xs">
+        {label}
+      </span>
       <span
         className={cn(
-          "mt-1.5 flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-3 shadow-sm transition focus-within:ring-4",
+          "mt-1 flex min-h-10 items-center gap-1.5 rounded-md border border-border bg-card px-2 shadow-sm transition focus-within:ring-4 sm:min-h-11 sm:gap-2 sm:px-3",
           "focus-within:border-[var(--nutrient-color)] focus-within:ring-[var(--nutrient-ring)]",
           error && "border-coral focus-within:border-coral focus-within:ring-coral/15",
         )}
@@ -204,7 +206,7 @@ function GoalInput({
         <input
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
-          className="min-w-0 flex-1 bg-transparent py-2.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent py-2 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground sm:py-2.5"
           defaultValue={defaultValue}
           inputMode="decimal"
           name={name}
@@ -212,14 +214,14 @@ function GoalInput({
           type="text"
         />
         <span
-          className="shrink-0 text-xs font-semibold"
+          className="shrink-0 text-[0.7rem] font-semibold sm:text-xs"
           style={{ color: "var(--nutrient-color)" }}
         >
           {unit}
         </span>
       </span>
       {error ? (
-        <span className="mt-1.5 block text-xs font-medium text-coral" id={errorId} role="alert">
+        <span className="mt-1 block text-xs font-medium text-coral" id={errorId} role="alert">
           {error}
         </span>
       ) : null}

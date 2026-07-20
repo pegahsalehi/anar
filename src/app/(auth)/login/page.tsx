@@ -32,7 +32,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         description="Log in to continue tracking your daily nutrition."
       />
       <LoginForm initialState={initialState} nextPath={getSafeRedirectPath(next)} />
-      <div className="mt-6 flex flex-col gap-3 text-sm text-[#51685D] sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-[#51685D] sm:mt-6 sm:text-sm">
         <Link
           className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
           href="/forgot-password"

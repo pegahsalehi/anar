@@ -14,12 +14,12 @@ export function FavoriteFoodButton({ foodId, isFavorite }: FavoriteFoodButtonPro
     <form action={action}>
       <button
         aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-primary/70 hover:text-foreground"
+        className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-primary/70 hover:text-foreground"
         type="submit"
       >
         <Heart
           aria-hidden="true"
-          className={cn("h-5 w-5", isFavorite && "fill-primary text-primary")}
+          className={cn("h-[1.125rem] w-[1.125rem]", isFavorite && "fill-primary text-primary")}
         />
       </button>
     </form>

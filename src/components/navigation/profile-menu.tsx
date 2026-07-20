@@ -31,7 +31,8 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | HTMLButtonElement | null>>([]);
-  const label = `Hi, ${user.displayName || "User"}`;
+  const displayName = getDisplayName(user);
+  const label = `Hi, ${displayName}`;
 
   useEffect(() => {
     if (!isOpen) {
@@ -103,13 +104,13 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
       <button
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="inline-flex min-h-11 items-center gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold shadow-sm transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-card px-2 py-2 text-sm font-semibold shadow-sm transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:gap-3 lg:px-3"
         onClick={() => setIsOpen((current) => !current)}
         onKeyDown={handleButtonKeyDown}
         type="button"
       >
         <UserAvatar avatarId={user.avatarId} size="sm" />
-        <span className="hidden max-w-44 truncate sm:inline">{label}</span>
+        <span className="hidden max-w-44 truncate lg:inline">{label}</span>
       </button>
 
       {isOpen ? (
@@ -119,7 +120,7 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
           role="menu"
         >
           <div className="border-b border-border px-3 py-2">
-            <p className="truncate text-sm font-semibold text-foreground">{user.displayName}</p>
+            <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
             {user.email ? (
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{user.email}</p>
             ) : null}
@@ -169,4 +170,14 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
       ) : null}
     </div>
   );
+}
+
+function getDisplayName(user: AppShellUser) {
+  const displayName = user.displayName.trim();
+
+  if (displayName) {
+    return displayName;
+  }
+
+  return user.email.split("@")[0]?.trim() || "User";
 }

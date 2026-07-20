@@ -14,7 +14,7 @@ export default function SignupPage() {
         description="Start tracking your meals and daily nutrition in just a few steps."
       />
       <SignupForm />
-      <p className="mt-6 text-sm text-[#51685D]">
+      <p className="mt-4 text-sm text-[#51685D] sm:mt-6">
         Already have an account?{" "}
         <Link
           className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
