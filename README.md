@@ -177,6 +177,45 @@ npm test           # Run tests
 npm run build      # Create a production build
 ```
 
+## PWA Testing
+
+The service worker is registered only in production builds so local development stays network-first.
+
+### Run locally as a PWA
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+Open `http://localhost:3000`. Chrome treats `localhost` as a secure origin, so the manifest and service worker can be tested from a production build.
+
+### Test installation on Android Chrome
+
+1. Build and start the app with `npm run build` and `npm run start`.
+2. Open Anar from an HTTPS origin on the phone. Use the deployed URL, or expose the local server through an HTTPS tunnel such as `cloudflared tunnel --url http://localhost:3000` or `ngrok http 3000`.
+3. In Android Chrome, open the HTTPS URL and sign in if needed.
+4. Tap the three-dot menu, then choose **Add to Home screen** or **Install app**.
+5. Launch Anar from the home screen. It should open without browser chrome and start at `/today`.
+
+### Test with Chrome DevTools
+
+1. Run `npm run build` and `npm run start`.
+2. Open `http://localhost:3000` in desktop Chrome.
+3. In DevTools, open **Application**.
+4. Check **Manifest** for the Anar name, standalone display mode, `/today` start URL, theme color, and 192x192, 512x512, and maskable icons.
+5. Check **Service Workers** for `/sw.js`. Use **Update on reload** or **Update** to verify new workers activate.
+6. In **Cache Storage**, confirm only public brand/PWA assets and `/_next/static/` files are cached.
+
+### Online requirements
+
+Authenticated features require an internet connection: login, signup, password reset, protected pages, Supabase data reads and writes, food logging, food library changes, history, settings, profile updates, private food images, and image uploads. The PWA does not provide offline nutrition tracking.
+
+### Remove or update the installed PWA
+
+On Android, long-press the installed Anar icon and choose uninstall/remove, or open Chrome site settings for the app origin and clear storage. To update, close and reopen the installed app while online; the service worker checks for updates on load and periodically, activates the new static cache, and refreshes controlled clients once the new worker takes over.
+
 ## Project Status
 
 Anar is under active development. The current foundation includes authentication, protected application routes, the personal Food Library, daily food logging, nutrition totals, quick access, streak statistics, history UI, private image handling, and ownership-based database security.
