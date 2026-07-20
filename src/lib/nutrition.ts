@@ -12,6 +12,15 @@ export type NutritionTargets = {
   fatTarget: number;
 };
 
+export type PartialNutritionTargets = Partial<Record<keyof NutritionTargets, number | null>>;
+
+export type DailyGoalTargetRow = Partial<{
+  calories_target: number | null;
+  protein_target: number | null;
+  carbohydrates_target: number | null;
+  fat_target: number | null;
+}>;
+
 export type NutritionProgress = {
   consumed: number;
   target: number;
@@ -28,12 +37,48 @@ export type DailyNutritionProgress = {
   fat: NutritionProgress;
 };
 
-export const defaultDailyGoals: NutritionTargets = {
+export const DEFAULT_DAILY_NUTRITION_TARGETS: NutritionTargets = {
   caloriesTarget: 2000,
-  proteinTarget: 100,
-  carbohydratesTarget: 250,
-  fatTarget: 70,
+  proteinTarget: 50,
+  carbohydratesTarget: 275,
+  fatTarget: 78,
 };
+
+export const defaultDailyGoals = DEFAULT_DAILY_NUTRITION_TARGETS;
+
+export function resolveDailyNutritionTargets(
+  targets: PartialNutritionTargets | null | undefined,
+): NutritionTargets {
+  return {
+    caloriesTarget: readTargetOrDefault(
+      targets?.caloriesTarget,
+      DEFAULT_DAILY_NUTRITION_TARGETS.caloriesTarget,
+    ),
+    proteinTarget: readTargetOrDefault(
+      targets?.proteinTarget,
+      DEFAULT_DAILY_NUTRITION_TARGETS.proteinTarget,
+    ),
+    carbohydratesTarget: readTargetOrDefault(
+      targets?.carbohydratesTarget,
+      DEFAULT_DAILY_NUTRITION_TARGETS.carbohydratesTarget,
+    ),
+    fatTarget: readTargetOrDefault(
+      targets?.fatTarget,
+      DEFAULT_DAILY_NUTRITION_TARGETS.fatTarget,
+    ),
+  };
+}
+
+export function resolveDailyNutritionTargetsFromGoal(
+  goal: DailyGoalTargetRow | null | undefined,
+): NutritionTargets {
+  return resolveDailyNutritionTargets({
+    caloriesTarget: goal?.calories_target,
+    proteinTarget: goal?.protein_target,
+    carbohydratesTarget: goal?.carbohydrates_target,
+    fatTarget: goal?.fat_target,
+  });
+}
 
 export function calculateConsumedNutrition(
   per100g: NutritionValues,
@@ -86,4 +131,8 @@ export function progressFromTotals(
     carbohydrates: calculateProgress(totals.carbohydrates, targets.carbohydratesTarget),
     fat: calculateProgress(totals.fat, targets.fatTarget),
   };
+}
+
+function readTargetOrDefault(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }

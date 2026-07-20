@@ -9,6 +9,7 @@ import {
   aggregateNutrition,
   calculateConsumedNutrition,
   defaultDailyGoals,
+  resolveDailyNutritionTargetsFromGoal,
   type NutritionTargets,
   type NutritionValues,
 } from "@/lib/nutrition";
@@ -29,10 +30,10 @@ type WeeklyFoodLog = {
 
 type WeeklyGoal = {
   effective_date: string;
-  calories_target: number;
-  protein_target: number;
-  carbohydrates_target: number;
-  fat_target: number;
+  calories_target?: number | null;
+  protein_target?: number | null;
+  carbohydrates_target?: number | null;
+  fat_target?: number | null;
 };
 
 const mondayDayLabels: Array<Pick<WeeklyProgressDay, "shortLabel" | "label">> = [
@@ -144,12 +145,7 @@ function getTargetsForDate(goals: WeeklyGoal[], date: string): NutritionTargets 
       return;
     }
 
-    targets = {
-      caloriesTarget: goal.calories_target,
-      proteinTarget: goal.protein_target,
-      carbohydratesTarget: goal.carbohydrates_target,
-      fatTarget: goal.fat_target,
-    };
+    targets = resolveDailyNutritionTargetsFromGoal(goal);
   });
 
   return targets;

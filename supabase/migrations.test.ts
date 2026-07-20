@@ -65,6 +65,24 @@ const imageAvatarIdsMigration = fs.readFileSync(
   ),
   "utf8",
 );
+const profileSelfInsertMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260720150000_allow_profile_self_insert.sql",
+  ),
+  "utf8",
+);
+const defaultDailyNutritionTargetsMigration = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    "20260720161000_set_default_daily_nutrition_targets.sql",
+  ),
+  "utf8",
+);
 
 describe("Supabase migrations", () => {
   it("grant app-owned tables only to authenticated", () => {
@@ -107,6 +125,12 @@ describe("Supabase migrations", () => {
     expect(singleDailyNutritionTargetsMigration).not.toMatch(
       /grant\s+.+\s+on\s+table\s+public\.daily_goals\s+to\s+anon/i,
     );
+    expect(profileSelfInsertMigration).toContain(
+      "grant select, insert, update on table public.profiles to authenticated;",
+    );
+    expect(profileSelfInsertMigration).not.toMatch(
+      /grant\s+.+\s+on\s+table\s+public\.profiles\s+to\s+anon/i,
+    );
   });
 
   it("keeps strict owner RLS policies and private storage policies", () => {
@@ -118,6 +142,13 @@ describe("Supabase migrations", () => {
     expect(storageMigration).toContain("false,");
     expect(storageMigration).toContain("to authenticated");
     expect(storageMigration).toContain("(storage.foldername(name))[1] = auth.uid()::text");
+    expect(profileSelfInsertMigration).toContain('create policy "profiles_insert_own"');
+    expect(profileSelfInsertMigration).toContain("on public.profiles");
+    expect(profileSelfInsertMigration).toContain("for insert");
+    expect(profileSelfInsertMigration).toContain("to authenticated");
+    expect(profileSelfInsertMigration).toContain("with check (auth.uid() = id)");
+    expect(profileSelfInsertMigration).not.toMatch(/for\s+all/i);
+    expect(profileSelfInsertMigration).not.toMatch(/using\s*\(\s*true\s*\)/i);
   });
 
   it("adds fat columns with safe backfills and constraints", () => {
@@ -188,6 +219,29 @@ describe("Supabase migrations", () => {
     expect(imageAvatarIdsMigration).toContain("when 'walnut' then '9'");
     expect(imageAvatarIdsMigration).toContain(
       "check (avatar_id in ('1', '2', '3', '4', '5', '6', '7', '8', '9'))",
+    );
+  });
+
+  it("sets future daily nutrition defaults without rewriting saved targets", () => {
+    expect(defaultDailyNutritionTargetsMigration).toContain(
+      "alter column calories_target set default 2000",
+    );
+    expect(defaultDailyNutritionTargetsMigration).toContain(
+      "alter column protein_target set default 50",
+    );
+    expect(defaultDailyNutritionTargetsMigration).toContain(
+      "alter column carbohydrates_target set default 275",
+    );
+    expect(defaultDailyNutritionTargetsMigration).toContain("alter column fat_target set default 78");
+    expect(defaultDailyNutritionTargetsMigration).toContain(
+      "create or replace function public.handle_new_user_profile()",
+    );
+    expect(defaultDailyNutritionTargetsMigration).toContain("    2000,\n    50,\n    275,\n    78");
+    expect(defaultDailyNutritionTargetsMigration).toContain(
+      "on conflict (user_id, effective_date) do nothing",
+    );
+    expect(defaultDailyNutritionTargetsMigration).not.toMatch(
+      /update\s+public\.daily_goals\s+set/i,
     );
   });
 });

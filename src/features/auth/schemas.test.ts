@@ -6,6 +6,7 @@ const validSignup = {
   email: "pegah@example.com",
   password: "supersecure",
   confirmPassword: "supersecure",
+  termsAccepted: "on",
   timezone: "Europe/Oslo",
 };
 
@@ -36,6 +37,25 @@ describe("signupSchema", () => {
           expect.objectContaining({
             message: "Passwords do not match.",
             path: ["confirmPassword"],
+          }),
+        ]),
+      );
+    }
+  });
+
+  it("requires legal acceptance", () => {
+    const parsed = signupSchema.safeParse({
+      ...validSignup,
+      termsAccepted: undefined,
+    });
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: "Please review and accept the Terms of Use before creating an account.",
+            path: ["termsAccepted"],
           }),
         ]),
       );

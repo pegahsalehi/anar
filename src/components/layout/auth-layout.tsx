@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChartNoAxesColumnIncreasing, ShieldCheck, Timer } from "lucide-react";
 import { AuthBrandLogo } from "@/components/layout/auth-brand-logo";
+import { LegalFooter } from "@/components/legal/legal-footer";
 
 const benefits: Array<{ title: string; icon: LucideIcon }> = [
   {
@@ -46,15 +47,18 @@ export function AuthLayout({ children }: { children: ReactNode }) {
               ))}
             </ul>
           </section>
-          <section
-            aria-label="Authentication form"
-            className="relative mx-auto w-full max-w-md overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-6 shadow-[0_24px_70px_rgb(18_53_42_/_0.12)] sm:p-8"
-          >
-            <div className="relative z-10">
-              <AuthBrandLogo />
-              {children}
-            </div>
-          </section>
+          <div className="relative mx-auto w-full max-w-md">
+            <section
+              aria-label="Authentication form"
+              className="w-full overflow-hidden rounded-md border border-[#DCE9E1] bg-white p-6 shadow-[0_24px_70px_rgb(18_53_42_/_0.12)] sm:p-8"
+            >
+              <div className="relative z-10">
+                <AuthBrandLogo />
+                {children}
+              </div>
+            </section>
+            <LegalFooter />
+          </div>
         </div>
       </div>
     </main>

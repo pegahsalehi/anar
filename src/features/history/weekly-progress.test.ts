@@ -3,6 +3,7 @@ import {
   buildWeeklyProgressData,
   resolveHistoryWeekStart,
 } from "@/features/history/weekly-progress";
+import { DEFAULT_DAILY_NUTRITION_TARGETS } from "@/lib/nutrition";
 
 describe("weekly progress", () => {
   it("normalizes requested weeks to Monday", () => {
@@ -99,6 +100,9 @@ describe("weekly progress", () => {
       completionRatio: 0,
       targetStatus: "below",
     });
+    expect(data.days[0].values.protein.target).toBe(100);
+    expect(data.days[0].values.carbohydrates.target).toBe(250);
+    expect(data.days[0].values.fat.target).toBe(70);
     expect(data.days[1].values.calories).toMatchObject({
       consumed: 200,
       target: 2000,
@@ -111,6 +115,9 @@ describe("weekly progress", () => {
       isToday: true,
     });
     expect(data.days[3].values.calories.target).toBe(1800);
+    expect(data.days[3].values.protein.target).toBe(120);
+    expect(data.days[3].values.carbohydrates.target).toBe(220);
+    expect(data.days[3].values.fat.target).toBe(65);
     expect(data.days[3].values.calories.targetStatus).toBe("reached");
     expect(data.days[4].values.calories.targetStatus).toBe("above");
   });
@@ -136,5 +143,36 @@ describe("weekly progress", () => {
       "Fri",
       "Sat",
     ]);
+    expect(data.days[0].values.calories.target).toBe(
+      DEFAULT_DAILY_NUTRITION_TARGETS.caloriesTarget,
+    );
+    expect(data.days[0].values.protein.target).toBe(
+      DEFAULT_DAILY_NUTRITION_TARGETS.proteinTarget,
+    );
+    expect(data.days[0].values.carbohydrates.target).toBe(
+      DEFAULT_DAILY_NUTRITION_TARGETS.carbohydratesTarget,
+    );
+    expect(data.days[0].values.fat.target).toBe(DEFAULT_DAILY_NUTRITION_TARGETS.fatTarget);
+  });
+
+  it("falls back safely when a saved weekly target row is partial", () => {
+    const data = buildWeeklyProgressData({
+      today: "2026-07-20",
+      weekStart: "2026-07-20",
+      goals: [
+        {
+          effective_date: "2026-07-20",
+          calories_target: 1800,
+          protein_target: null,
+          fat_target: 0,
+        },
+      ],
+      logs: [],
+    });
+
+    expect(data.days[0].values.calories.target).toBe(1800);
+    expect(data.days[0].values.protein.target).toBe(50);
+    expect(data.days[0].values.carbohydrates.target).toBe(275);
+    expect(data.days[0].values.fat.target).toBe(0);
   });
 });

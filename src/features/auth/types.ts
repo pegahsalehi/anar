@@ -1,5 +1,5 @@
 export type AuthFieldErrors = Partial<
-  Record<"email" | "password" | "confirmPassword" | "displayName", string>
+  Record<"email" | "password" | "confirmPassword" | "displayName" | "termsAccepted", string>
 >;
 
 export type AuthActionState = {

@@ -8,6 +8,7 @@ import {
   calculateConsumedNutrition,
   defaultDailyGoals,
   progressFromTotals,
+  resolveDailyNutritionTargetsFromGoal,
   type DailyNutritionProgress,
 } from "@/lib/nutrition";
 import type { WeeklyProgressData } from "@/features/history/types";
@@ -230,14 +231,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
       fat: log.fat,
     })),
   );
-  const goals = goal
-    ? {
-        caloriesTarget: goal.calories_target,
-        proteinTarget: goal.protein_target,
-        carbohydratesTarget: goal.carbohydrates_target,
-        fatTarget: goal.fat_target,
-      }
-    : defaultDailyGoals;
+  const goals = resolveDailyNutritionTargetsFromGoal(goal);
 
   return {
     activeDates,

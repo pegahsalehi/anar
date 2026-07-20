@@ -144,7 +144,8 @@ function validationError(error: z.ZodError): AuthActionState {
       (field === "email" ||
         field === "password" ||
         field === "confirmPassword" ||
-        field === "displayName") &&
+        field === "displayName" ||
+        field === "termsAccepted") &&
       !fieldErrors[field]
     ) {
       fieldErrors[field] = issue.message;

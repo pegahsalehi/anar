@@ -6,15 +6,16 @@ import { loginAction } from "@/features/auth/actions";
 import { AuthMessage } from "@/features/auth/components/auth-message";
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button";
 import { PasswordInputField } from "@/features/auth/components/password-input-field";
-import { initialAuthState } from "@/features/auth/types";
+import { initialAuthState, type AuthActionState } from "@/features/auth/types";
 import { cn } from "@/lib/utils";
 
 type LoginFormProps = {
+  initialState?: AuthActionState;
   nextPath: string;
 };
 
-export function LoginForm({ nextPath }: LoginFormProps) {
-  const [state, formAction] = useActionState(loginAction, initialAuthState);
+export function LoginForm({ initialState, nextPath }: LoginFormProps) {
+  const [state, formAction] = useActionState(loginAction, initialState ?? initialAuthState);
 
   return (
     <form action={formAction} className="mt-8 space-y-5">

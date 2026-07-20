@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { Mail, UserRound } from "lucide-react";
 import { signupAction } from "@/features/auth/actions";
+import { termsAcceptanceMessage } from "@/features/auth/schemas";
 import { AuthMessage } from "@/features/auth/components/auth-message";
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button";
 import { PasswordInputField } from "@/features/auth/components/password-input-field";
@@ -11,7 +13,11 @@ import { cn } from "@/lib/utils";
 
 export function SignupForm() {
   const [state, formAction] = useActionState(signupAction, initialAuthState);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [timezone, setTimezone] = useState("UTC");
+  const termsError = !termsAccepted
+    ? (state.fieldErrors.termsAccepted ?? termsAcceptanceMessage)
+    : null;
 
   useEffect(() => {
     setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
@@ -87,7 +93,68 @@ export function SignupForm() {
         name="confirmPassword"
         placeholder="Repeat your password"
       />
-      <AuthSubmitButton>Create account</AuthSubmitButton>
+      <div>
+        <div
+          className={cn(
+            "flex items-start gap-3 rounded-md border border-[#DCE9E1] bg-[#F7F8F6] px-3.5 py-3",
+            termsError && "border-[#DE2624]/45 bg-[#DE2624]/5",
+          )}
+        >
+          <input
+            aria-describedby={termsError ? "signup-terms-error" : undefined}
+            aria-invalid={Boolean(termsError)}
+            aria-labelledby="signup-terms-label"
+            checked={termsAccepted}
+            className="mt-1 h-4 w-4 shrink-0 rounded border-[#B8C8C0] accent-[#55DCA4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55DCA4]/45"
+            id="signup-terms-accepted"
+            name="termsAccepted"
+            onChange={(event) => setTermsAccepted(event.currentTarget.checked)}
+            required
+            type="checkbox"
+          />
+          <p className="text-sm leading-6 text-[#51685D]" id="signup-terms-label">
+            I agree to the{" "}
+            <Link
+              className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
+              href="/terms"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Terms of Use
+            </Link>{" "}
+            and acknowledge the{" "}
+            <Link
+              className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
+              href="/privacy"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link
+              className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"
+              href="/disclaimer"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Nutrition Disclaimer
+            </Link>
+            .
+          </p>
+        </div>
+        {termsError ? (
+          <p className="mt-2 text-sm font-medium text-[#DE2624]" id="signup-terms-error" role="alert">
+            {termsError}
+          </p>
+        ) : null}
+      </div>
+      <AuthSubmitButton
+        ariaDescribedBy={termsError ? "signup-terms-error" : undefined}
+        disabled={!termsAccepted}
+      >
+        Create account
+      </AuthSubmitButton>
     </form>
   );
 }

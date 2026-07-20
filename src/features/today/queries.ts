@@ -7,7 +7,7 @@ import {
   calculateConsumedNutrition,
   defaultDailyGoals,
   progressFromTotals,
-  type NutritionTargets,
+  resolveDailyNutritionTargetsFromGoal,
 } from "@/lib/nutrition";
 import { calculateLogDayStats } from "@/features/today/streaks";
 import type {
@@ -114,7 +114,7 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   ]);
 
   const goal = goalResult.data as GoalRow | null;
-  const goals = goal ? getNutritionTargetsFromGoal(goal) : defaultDailyGoals;
+  const goals = resolveDailyNutritionTargetsFromGoal(goal);
 
   const foods = (foodsResult.data ?? []) as TodayFoodRow[];
   const logs = (logsResult.data ?? []) as FoodLogRow[];
@@ -198,17 +198,8 @@ export async function getTodayDashboardData(): Promise<TodayDashboardData> {
   };
 }
 
-function getNutritionTargetsFromGoal(goal: GoalRow): NutritionTargets {
-  return {
-    caloriesTarget: goal.calories_target,
-    proteinTarget: goal.protein_target,
-    carbohydratesTarget: goal.carbohydrates_target,
-    fatTarget: goal.fat_target,
-  };
-}
-
 function buildEmptyDashboardData(): TodayDashboardData {
-  const goals: NutritionTargets = defaultDailyGoals;
+  const goals = defaultDailyGoals;
   const totals = { calories: 0, protein: 0, carbohydrates: 0, fat: 0 };
 
   return {

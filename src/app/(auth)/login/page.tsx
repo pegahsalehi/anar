@@ -9,12 +9,21 @@ export const metadata = {
 
 type LoginPageProps = {
   searchParams: Promise<{
+    deleted?: string;
     next?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { next } = await searchParams;
+  const { deleted, next } = await searchParams;
+  const initialState =
+    deleted === "1"
+      ? {
+          status: "success" as const,
+          message: "Your account has been permanently deleted.",
+          fieldErrors: {},
+        }
+      : undefined;
 
   return (
     <section className="w-full">
@@ -22,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         title="Welcome back"
         description="Log in to continue tracking your daily nutrition."
       />
-      <LoginForm nextPath={getSafeRedirectPath(next)} />
+      <LoginForm initialState={initialState} nextPath={getSafeRedirectPath(next)} />
       <div className="mt-6 flex flex-col gap-3 text-sm text-[#51685D] sm:flex-row sm:items-center sm:justify-between">
         <Link
           className="font-semibold text-[#12352A] underline-offset-4 hover:text-[#2E9F6D] hover:underline focus-visible:rounded-sm"

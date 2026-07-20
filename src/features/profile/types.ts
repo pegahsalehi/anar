@@ -39,3 +39,17 @@ export const initialProfileIdentityActionState: ProfileIdentityActionState = {
   message: null,
   fieldErrors: {},
 };
+
+export type DeleteAccountField = "confirmation";
+
+export type DeleteAccountActionState = {
+  status: "idle" | "error";
+  message: string | null;
+  fieldErrors: Partial<Record<DeleteAccountField, string>>;
+};
+
+export const initialDeleteAccountActionState: DeleteAccountActionState = {
+  status: "idle",
+  message: null,
+  fieldErrors: {},
+};

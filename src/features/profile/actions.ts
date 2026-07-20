@@ -19,6 +19,27 @@ type ProfileRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
   "avatar_id" | "display_name"
 >;
+type ProfileOperation =
+  | "auth.getUser"
+  | "profiles.select"
+  | "profiles.update"
+  | "profiles.upsert"
+  | "auth.updateUser.email";
+type NormalizedSupabaseError = {
+  code?: string;
+  details?: string | null;
+  hint?: string | null;
+  message: string;
+  name?: string;
+  status?: number;
+};
+
+const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
+const PROFILE_PERMISSION_ERROR_MESSAGE =
+  "Your profile could not be updated because of a database permission error.";
+const PROFILE_DATA_INCOMPLETE_MESSAGE =
+  "Your profile could not be saved because the profile data is incomplete.";
+const PROFILE_GENERIC_SAVE_ERROR_MESSAGE = "Your profile could not be saved. Please try again.";
 
 export async function saveProfileIdentityAction(
   _previousState: ProfileIdentityActionState,
@@ -37,11 +58,13 @@ export async function saveProfileIdentityAction(
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
+    if (authError) {
+      logProfileOperationError("auth.getUser", authError);
+    }
+
     return {
       status: "error",
-      message: authError
-        ? "Your session could not be verified. Please log in again."
-        : "You must be signed in to update your profile.",
+      message: SESSION_EXPIRED_MESSAGE,
       fieldErrors: {},
     };
   }
@@ -51,7 +74,7 @@ export async function saveProfileIdentityAction(
   if (!currentEmail) {
     return {
       status: "error",
-      message: "Your account email could not be loaded. Please log in again.",
+      message: SESSION_EXPIRED_MESSAGE,
       fieldErrors: {
         email: "Your active account email could not be loaded.",
       },
@@ -65,14 +88,13 @@ export async function saveProfileIdentityAction(
     .maybeSingle();
 
   if (profileResult.error) {
-    logProfileActionError("[profile:saveIdentity] profiles.select failed", {
-      error: profileResult.error,
+    logProfileOperationError("profiles.select", profileResult.error, {
       userId: user.id,
     });
 
     return {
       status: "error",
-      message: "Profile could not be loaded. Please try again.",
+      message: getProfilePersistenceErrorMessage(profileResult.error),
       fieldErrors: {},
     };
   }
@@ -110,7 +132,7 @@ export async function saveProfileIdentityAction(
           .update(profileValues)
           .eq("id", user.id)
           .select("avatar_id, display_name")
-          .maybeSingle()
+          .single()
       : await supabase
           .from("profiles")
           .upsert(
@@ -121,17 +143,19 @@ export async function saveProfileIdentityAction(
             { onConflict: "id" },
           )
           .select("avatar_id, display_name")
-          .maybeSingle();
+          .single();
 
     if (saveResult.error || !saveResult.data) {
       const operation = currentProfile ? "profiles.update" : "profiles.upsert";
-      logProfileActionError(`[profile:saveIdentity] ${operation} failed`, {
-        error: saveResult.error ?? "No matching profile row was saved.",
+      const error = saveResult.error ?? {
+        code: "PGRST116",
+        message: "No matching profile row was saved.",
+        status: 406,
+      };
+      logProfileOperationError(operation, error, {
         userId: user.id,
       });
-      profileUpdateError = currentProfile
-        ? "Display name and avatar could not be saved."
-        : "Your profile record could not be created. Please sign out and back in, then try again.";
+      profileUpdateError = getProfilePersistenceErrorMessage(error);
     } else {
       const updatedProfile = saveResult.data as ProfileRow;
       savedProfile = {
@@ -155,8 +179,7 @@ export async function saveProfileIdentityAction(
     );
 
     if (emailError) {
-      logProfileActionError("[profile:saveIdentity] auth.updateUser email failed", {
-        error: emailError,
+      logProfileOperationError("auth.updateUser.email", emailError, {
         userId: user.id,
       });
       emailUpdateError = translateEmailUpdateError(emailError.message);
@@ -270,7 +293,7 @@ function translateEmailUpdateError(message: string) {
     normalized.includes("token") ||
     normalized.includes("expired")
   ) {
-    return "Your session has expired. Please log in again.";
+    return SESSION_EXPIRED_MESSAGE;
   }
 
   if (normalized.includes("reauthentication") || normalized.includes("recent")) {
@@ -317,14 +340,107 @@ function getSaveErrorMessage({
   return "Email could not be updated.";
 }
 
-function logProfileActionError(
-  label: string,
+function getProfilePersistenceErrorMessage(error: unknown) {
+  const normalized = normalizeSupabaseError(error);
+  const code = normalized.code?.toUpperCase();
+  const searchable = [
+    normalized.message,
+    normalized.details,
+    normalized.hint,
+    normalized.name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    code === "42501" ||
+    searchable.includes("row-level security") ||
+    searchable.includes("permission denied") ||
+    searchable.includes("insufficient privilege")
+  ) {
+    return PROFILE_PERMISSION_ERROR_MESSAGE;
+  }
+
+  if (
+    code === "23502" ||
+    code === "23503" ||
+    code === "23514" ||
+    code === "42703" ||
+    searchable.includes("not-null") ||
+    searchable.includes("null value") ||
+    searchable.includes("check constraint") ||
+    searchable.includes("foreign key") ||
+    searchable.includes("schema cache") ||
+    (searchable.includes("column") && searchable.includes("does not exist"))
+  ) {
+    return PROFILE_DATA_INCOMPLETE_MESSAGE;
+  }
+
+  return PROFILE_GENERIC_SAVE_ERROR_MESSAGE;
+}
+
+function logProfileOperationError(
+  operation: ProfileOperation,
+  error: unknown,
   details: {
-    error: unknown;
-    userId: string;
-  },
+    userId?: string;
+  } = {},
 ) {
   if (process.env.NODE_ENV !== "production") {
-    console.error(label, details);
+    const normalized = normalizeSupabaseError(error);
+
+    console.error(`[profile:saveIdentity] ${operation} failed`, {
+      operation,
+      code: normalized.code,
+      message: normalized.message,
+      details: normalized.details,
+      hint: normalized.hint,
+      status: normalized.status,
+      name: normalized.name,
+      userId: details.userId,
+      error,
+    });
   }
+}
+
+function normalizeSupabaseError(error: unknown): NormalizedSupabaseError {
+  if (typeof error === "string") {
+    return {
+      message: error,
+    };
+  }
+
+  if (!error || typeof error !== "object") {
+    return {
+      message: "Unknown Supabase error",
+    };
+  }
+
+  const record = error as Record<string, unknown>;
+
+  return {
+    code: readString(record.code),
+    details: readNullableString(record.details),
+    hint: readNullableString(record.hint),
+    message: readString(record.message) ?? "Unknown Supabase error",
+    name: readString(record.name),
+    status: readNumber(record.status),
+  };
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value ? value : undefined;
+}
+
+function readNullableString(value: unknown) {
+  if (value === null) {
+    return null;
+  }
+
+  return readString(value);
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" ? value : undefined;
 }

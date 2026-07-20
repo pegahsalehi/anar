@@ -13,6 +13,7 @@ export default defineConfig({
     css: true,
     environment: "jsdom",
     globals: true,
+    include: ["src/**/*.test.{ts,tsx}", "supabase/**/*.test.ts"],
     setupFiles: ["./tests/setup.ts"],
   },
 });

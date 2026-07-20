@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
+import { legalLinks } from "@/content/legal-documents";
 import { DailyNutritionTargetsForm } from "@/features/settings/components/daily-nutrition-targets-form";
 import { SettingsAccordionCard } from "@/features/settings/components/settings-accordion-card";
 import { getSettingsPageData } from "@/features/settings/queries";
@@ -51,6 +53,35 @@ export default async function SettingsPage() {
           </div>
         </SettingsAccordionCard>
       </div>
+      <section
+        aria-labelledby="legal-privacy-title"
+        className="rounded-md border border-border bg-card p-5 shadow-sm sm:p-6"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-card-foreground" id="legal-privacy-title">
+              Legal & privacy
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Review Anar&apos;s public legal documents.
+            </p>
+          </div>
+          <nav
+            aria-label="Legal and privacy documents"
+            className="flex flex-wrap gap-2 text-sm font-semibold"
+          >
+            {legalLinks.map((link) => (
+              <Link
+                className="inline-flex min-h-10 items-center rounded-md border border-border px-3 py-2 text-foreground transition hover:bg-surface-soft hover:text-effective-badge-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                href={link.href}
+                key={link.href}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
     </div>
   );
 }

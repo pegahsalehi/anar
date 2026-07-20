@@ -18,9 +18,11 @@ import {
   avatarOptions,
   type AvatarId,
 } from "@/features/profile/avatar-options";
+import { deleteAccountAction } from "@/features/profile/delete-account-action";
 import { saveProfileIdentityAction } from "@/features/profile/actions";
 import { ProfilePasswordForm } from "@/features/profile/components/profile-password-form";
 import {
+  initialDeleteAccountActionState,
   initialProfileIdentityActionState,
   type ProfileIdentityValues,
   type ProfilePageData,
@@ -69,6 +71,7 @@ export function ProfileContent({ data }: ProfileContentProps) {
         memberSince={data.memberSince}
       />
       <AccountSecurityCard />
+      <DeleteAccountDangerZone />
       {isEditorOpen ? (
         <ProfileEditorModal
           initialValues={profile}
@@ -83,6 +86,197 @@ export function ProfileContent({ data }: ProfileContentProps) {
         <ProfileToast message={toastMessage} onDismiss={() => setToastMessage(null)} />
       ) : null}
     </>
+  );
+}
+
+function DeleteAccountDangerZone() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+
+  function closeDialog() {
+    setIsDialogOpen(false);
+    window.requestAnimationFrame(() => deleteButtonRef.current?.focus());
+  }
+
+  return (
+    <section
+      aria-labelledby="delete-account-title"
+      className="rounded-md border border-[#F4B5B5] bg-card p-5 shadow-sm sm:p-6"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-2xl">
+          <h2 className="text-lg font-semibold text-card-foreground" id="delete-account-title">
+            Delete account
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            Permanently delete your account, nutrition history, saved foods, uploaded images, and
+            profile data. This action cannot be undone.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#DE2624] px-5 py-2.5 text-sm font-semibold text-[#B51E1C] transition hover:bg-[#DE2624]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DE2624]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          onClick={() => setIsDialogOpen(true)}
+          ref={deleteButtonRef}
+          type="button"
+        >
+          Delete account
+        </button>
+      </div>
+
+      {isDialogOpen ? <DeleteAccountModal onCancel={closeDialog} /> : null}
+    </section>
+  );
+}
+
+function DeleteAccountModal({ onCancel }: { onCancel: () => void }) {
+  const [state, formAction, isPending] = useActionState(
+    deleteAccountAction,
+    initialDeleteAccountActionState,
+  );
+  const [confirmation, setConfirmation] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const confirmationInputRef = useRef<HTMLInputElement>(null);
+  const canDelete = confirmation === "DELETE";
+
+  useEffect(() => {
+    window.requestAnimationFrame(() => confirmationInputRef.current?.focus());
+  }, []);
+
+  function handleCancel() {
+    if (isPending) {
+      return;
+    }
+
+    onCancel();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      handleCancel();
+      return;
+    }
+
+    if (event.key !== "Tab" || !dialogRef.current) {
+      return;
+    }
+
+    const focusable = getFocusableElements(dialogRef.current);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+
+    if (!first || !last) {
+      return;
+    }
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  return (
+    <div
+      aria-labelledby="delete-account-dialog-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/25 px-4 py-6 backdrop-blur-sm"
+      onKeyDown={handleKeyDown}
+      role="dialog"
+    >
+      <div
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-md border border-[#F4B5B5] bg-card p-5 shadow-soft sm:p-6"
+        ref={dialogRef}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2
+              className="text-lg font-semibold text-card-foreground"
+              id="delete-account-dialog-title"
+            >
+              Delete your account?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              This will permanently delete your account and all associated data. This action cannot
+              be undone.
+            </p>
+          </div>
+          <button
+            aria-label="Close delete account dialog"
+            className="flex h-9 w-9 items-center justify-center rounded-sm text-muted-foreground transition hover:bg-surface-soft hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            disabled={isPending}
+            onClick={handleCancel}
+            type="button"
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form action={formAction} className="mt-5 space-y-5">
+          {state.message ? (
+            <p
+              aria-live="assertive"
+              className="rounded-md border border-[#DE2624]/20 bg-[#DE2624]/[0.08] px-3.5 py-3 text-sm font-medium leading-6 text-[#B51E1C]"
+              role="alert"
+            >
+              {state.message}
+            </p>
+          ) : null}
+
+          <label className="block">
+            <span className="text-sm font-semibold text-foreground">Type DELETE to confirm</span>
+            <input
+              aria-describedby={
+                state.fieldErrors.confirmation ? "delete-account-confirmation-error" : undefined
+              }
+              aria-invalid={Boolean(state.fieldErrors.confirmation)}
+              autoComplete="off"
+              className={cn(
+                "mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15",
+                state.fieldErrors.confirmation &&
+                  "border-[#DE2624] focus:border-[#DE2624] focus:ring-[#DE2624]/15",
+              )}
+              name="confirmation"
+              onChange={(event) => setConfirmation(event.currentTarget.value)}
+              ref={confirmationInputRef}
+              value={confirmation}
+            />
+            {state.fieldErrors.confirmation ? (
+              <span
+                className="mt-1.5 block text-xs font-medium text-[#B51E1C]"
+                id="delete-account-confirmation-error"
+                role="alert"
+              >
+                {state.fieldErrors.confirmation}
+              </span>
+            ) : null}
+          </label>
+
+          <p aria-live="polite" className="text-sm font-medium text-muted-foreground" role="status">
+            {isPending ? "Deleting account..." : ""}
+          </p>
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-surface-soft disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={isPending}
+              onClick={handleCancel}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#DE2624] px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-[#B51E1C] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DE2624]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              disabled={isPending || !canDelete}
+              type="submit"
+            >
+              {isPending ? "Deleting..." : "Permanently delete account"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

@@ -1,11 +1,51 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_DAILY_NUTRITION_TARGETS,
   aggregateNutrition,
   calculateConsumedNutrition,
   progressFromTotals,
+  resolveDailyNutritionTargets,
+  resolveDailyNutritionTargetsFromGoal,
 } from "@/lib/nutrition";
 
 describe("nutrition helpers", () => {
+  it("uses the shared default daily nutrition targets", () => {
+    expect(DEFAULT_DAILY_NUTRITION_TARGETS).toEqual({
+      caloriesTarget: 2000,
+      proteinTarget: 50,
+      carbohydratesTarget: 275,
+      fatTarget: 78,
+    });
+  });
+
+  it("falls back safely when target data is missing or partial", () => {
+    expect(resolveDailyNutritionTargets(null)).toEqual(DEFAULT_DAILY_NUTRITION_TARGETS);
+    expect(
+      resolveDailyNutritionTargets({
+        caloriesTarget: 1800,
+        proteinTarget: undefined,
+        fatTarget: 0,
+      }),
+    ).toEqual({
+      caloriesTarget: 1800,
+      proteinTarget: 50,
+      carbohydratesTarget: 275,
+      fatTarget: 0,
+    });
+    expect(
+      resolveDailyNutritionTargetsFromGoal({
+        calories_target: 1900,
+        protein_target: null,
+        fat_target: 70,
+      }),
+    ).toEqual({
+      caloriesTarget: 1900,
+      proteinTarget: 50,
+      carbohydratesTarget: 275,
+      fatTarget: 70,
+    });
+  });
+
   it("calculates consumed nutrition from per-100g values", () => {
     expect(
       calculateConsumedNutrition(

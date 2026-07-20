@@ -249,7 +249,7 @@ function LogFoodDialog({
               <span className="text-sm font-semibold text-foreground">Food</span>
               <select
                 aria-invalid={Boolean(state.fieldErrors.foodId)}
-                className="min-h-12 rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
+                className="min-h-12 rounded-md border border-[#DDE4E0] bg-[#F7F8F6] px-3 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
                 name="foodId"
                 onChange={(event) => setFoodId(event.target.value)}
                 value={foodId}
@@ -268,7 +268,7 @@ function LogFoodDialog({
             </label>
 
             {selectedFood ? (
-              <div className="flex items-center gap-3 rounded-md bg-muted p-3">
+              <div className="flex items-center gap-3 rounded-md border border-[#DDE4E0] bg-[#F7F8F6] p-3">
                 <span className="h-14 w-14 shrink-0 overflow-hidden rounded-md">
                   <FoodImage alt={`${selectedFood.name} image`} src={selectedFood.imageUrl} />
                 </span>
@@ -288,7 +288,7 @@ function LogFoodDialog({
               <span className="text-sm font-semibold text-foreground">Consumed grams</span>
               <input
                 aria-invalid={Boolean(state.fieldErrors.grams)}
-                className="min-h-12 rounded-md border border-border bg-background px-3 outline-none transition focus:border-primary"
+                className="min-h-12 rounded-md border border-[#DDE4E0] bg-[#F7F8F6] px-3 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
                 defaultValue="100"
                 inputMode="decimal"
                 name="grams"

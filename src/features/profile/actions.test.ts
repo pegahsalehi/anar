@@ -392,6 +392,143 @@ describe("saveProfileIdentityAction", () => {
     );
   });
 
+  it("reports profile self-insert permission errors with complete development diagnostics", async () => {
+    const permissionError = {
+      code: "42501",
+      details: null,
+      hint: null,
+      message: 'new row violates row-level security policy for table "profiles"',
+      status: 403,
+    };
+    const upsertProfileMock = vi.fn();
+    const supabase = createProfileSupabaseMock({
+      profile: null,
+      updateProfileResult: {
+        data: null,
+        error: permissionError,
+      },
+      upsertProfileMock,
+      user: authenticatedUser(),
+    });
+    createServerSupabaseClientMock.mockResolvedValue(supabase);
+
+    const result = await save(
+      profileFormData({
+        avatarId: "2",
+        displayName: "Pegah New",
+        email: "peg@example.com",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Your profile could not be updated because of a database permission error.",
+      profileError: "Your profile could not be updated because of a database permission error.",
+      profileUpdated: false,
+    });
+    expect(upsertProfileMock).toHaveBeenCalledWith(
+      {
+        id: "user-1",
+        avatar_id: "2",
+        display_name: "Pegah New",
+      },
+      { onConflict: "id" },
+    );
+    expect(console.error).toHaveBeenCalledWith(
+      "[profile:saveIdentity] profiles.upsert failed",
+      expect.objectContaining({
+        code: "42501",
+        details: null,
+        hint: null,
+        message: 'new row violates row-level security policy for table "profiles"',
+        operation: "profiles.upsert",
+        status: 403,
+        userId: "user-1",
+      }),
+    );
+  });
+
+  it("reports profile schema errors separately from email errors", async () => {
+    const schemaError = {
+      code: "23502",
+      details: 'Failing row contains (user-1, Pegah New, null, null, null).',
+      hint: null,
+      message: 'null value in column "timezone" of relation "profiles" violates not-null constraint',
+      status: 400,
+    };
+    const supabase = createProfileSupabaseMock({
+      profile: null,
+      updateProfileResult: {
+        data: null,
+        error: schemaError,
+      },
+      user: authenticatedUser(),
+    });
+    createServerSupabaseClientMock.mockResolvedValue(supabase);
+
+    const result = await save(
+      profileFormData({
+        avatarId: "2",
+        displayName: "Pegah New",
+        email: "peg@example.com",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Your profile could not be saved because the profile data is incomplete.",
+      profileError: "Your profile could not be saved because the profile data is incomplete.",
+      profileUpdated: false,
+    });
+    expect(console.error).toHaveBeenCalledWith(
+      "[profile:saveIdentity] profiles.upsert failed",
+      expect.objectContaining({
+        code: "23502",
+        operation: "profiles.upsert",
+        status: 400,
+      }),
+    );
+  });
+
+  it("reports expired sessions when auth lookup fails", async () => {
+    const authError = {
+      message: "Auth session missing!",
+      name: "AuthSessionMissingError",
+      status: 401,
+    };
+    createServerSupabaseClientMock.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: authError,
+        }),
+      },
+    });
+
+    const result = await save(
+      profileFormData({
+        avatarId: "1",
+        displayName: "Pegah",
+        email: "peg@example.com",
+      }),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Your session has expired. Please sign in again.",
+      fieldErrors: {},
+    });
+    expect(console.error).toHaveBeenCalledWith(
+      "[profile:saveIdentity] auth.getUser failed",
+      expect.objectContaining({
+        message: "Auth session missing!",
+        name: "AuthSessionMissingError",
+        operation: "auth.getUser",
+        status: 401,
+      }),
+    );
+  });
+
   it("rejects invalid input before touching Supabase", async () => {
     const result = await save(
       profileFormData({
@@ -478,6 +615,7 @@ function createProfileSupabaseMock({
   const updateBuilder = {
     eq: effectiveUpdateEqMock,
     maybeSingle: vi.fn().mockResolvedValue(updateProfileResult),
+    single: vi.fn().mockResolvedValue(updateProfileResult),
     select: vi.fn(() => updateBuilder),
   };
   effectiveUpdateEqMock.mockImplementation(() => updateBuilder);

@@ -1,10 +1,7 @@
 import { getLocalISODate } from "@/lib/dates";
-import { defaultDailyGoals } from "@/lib/nutrition";
+import { resolveDailyNutritionTargetsFromGoal } from "@/lib/nutrition";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type {
-  DailyNutritionTargetValues,
-  SettingsPageData,
-} from "@/features/settings/types";
+import type { SettingsPageData } from "@/features/settings/types";
 import type { Database } from "@/types/database";
 import { isRealSupabaseRequestError } from "@/lib/supabase/errors";
 
@@ -32,7 +29,7 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
 
   if (authError) {
     return {
-      dailyGoals: getDefaultDailyNutritionTargets(),
+      dailyGoals: resolveDailyNutritionTargetsFromGoal(null),
       effectiveDate: "",
       error: settingsDataLoadError,
     };
@@ -40,7 +37,7 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
 
   if (!user) {
     return {
-      dailyGoals: getDefaultDailyNutritionTargets(),
+      dailyGoals: resolveDailyNutritionTargetsFromGoal(null),
       effectiveDate: "",
       error: null,
     };
@@ -64,30 +61,10 @@ export async function getSettingsPageData(): Promise<SettingsPageData> {
     .maybeSingle();
 
   return {
-    dailyGoals: goal
-      ? getDailyNutritionTargets(goal as GoalRow)
-      : getDefaultDailyNutritionTargets(),
+    dailyGoals: resolveDailyNutritionTargetsFromGoal(goal as GoalRow | null),
     effectiveDate: localDate,
     error: [profileError, goalError].some(isRealSupabaseRequestError)
       ? settingsDataLoadError
       : null,
-  };
-}
-
-function getDailyNutritionTargets(goal: GoalRow): DailyNutritionTargetValues {
-  return {
-    caloriesTarget: goal.calories_target,
-    proteinTarget: goal.protein_target,
-    carbohydratesTarget: goal.carbohydrates_target,
-    fatTarget: goal.fat_target,
-  };
-}
-
-function getDefaultDailyNutritionTargets(): DailyNutritionTargetValues {
-  return {
-    caloriesTarget: defaultDailyGoals.caloriesTarget,
-    proteinTarget: defaultDailyGoals.proteinTarget,
-    carbohydratesTarget: defaultDailyGoals.carbohydratesTarget,
-    fatTarget: defaultDailyGoals.fatTarget,
   };
 }

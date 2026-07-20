@@ -64,9 +64,9 @@ export type Database = {
           id?: string;
           user_id: string;
           effective_date: string;
-          calories_target: number;
-          protein_target: number;
-          carbohydrates_target: number;
+          calories_target?: number;
+          protein_target?: number;
+          carbohydrates_target?: number;
           fat_target?: number;
           created_at?: string;
           updated_at?: string;

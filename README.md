@@ -1,10 +1,18 @@
 <div align="center">
 
-# Anar
+<a href="https://anar.pegah.no">
+  <img src="./public/brand/anar-logo.png" alt="Anar — personal nutrition tracker" width="180" />
+</a>
 
 ### Nutrition tracking built around the food you actually eat.
 
 Add your everyday meals once, build a personal food library, and log them again in seconds.
+
+<p>
+  <a href="https://anar.pegah.no">
+    <img alt="Open the live Anar app at anar.pegah.no" src="https://img.shields.io/badge/OPEN_LIVE_APP-anar.pegah.no-50D6A3?style=for-the-badge&logo=googlechrome&logoColor=white" />
+  </a>
+</p>
 
 <p>
   <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white" />
