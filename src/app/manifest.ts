@@ -6,7 +6,7 @@ const themeColor = "#FFFCF7";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${appName} - Personal Nutrition Tracker`,
+    name: appName,
     short_name: appName,
     description: appDescription,
     id: "/",

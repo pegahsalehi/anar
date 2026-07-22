@@ -10,8 +10,28 @@ import {
   signupSchema,
 } from "@/features/auth/schemas";
 import type { AuthActionState, AuthFieldErrors } from "@/features/auth/types";
-import { createApplicationUrl } from "@/lib/application-url";
+import {
+  ApplicationUrlConfigurationError,
+  createApplicationUrl,
+} from "@/lib/application-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+type SignupDiagnosticStage =
+  | "signup_action_entered"
+  | "form_data_parsed"
+  | "validation_completed"
+  | "creating_supabase_client"
+  | "supabase_client_created"
+  | "building_email_redirect_url"
+  | "before_auth_sign_up"
+  | "after_auth_sign_up";
+
+type NormalizedAuthActionError = {
+  code?: string;
+  message: string;
+  name?: string;
+  status?: number;
+};
 
 export async function loginAction(
   _previousState: AuthActionState,
@@ -40,32 +60,74 @@ export async function signupAction(
   _previousState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  const parsed = signupSchema.safeParse(readFormData(formData));
+  let stage: SignupDiagnosticStage = "signup_action_entered";
+  logSignupStage(stage);
+
+  const formValues = readFormData(formData);
+  stage = "form_data_parsed";
+  logSignupStage(stage);
+
+  const parsed = signupSchema.safeParse(formValues);
+  stage = "validation_completed";
 
   if (!parsed.success) {
+    logSignupStage(stage, { validationSucceeded: false });
     return validationError(parsed.error);
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    options: {
-      emailRedirectTo: createApplicationUrl("/auth/callback", {
-        next: "/today",
-      }).toString(),
-      data: {
-        display_name: parsed.data.displayName || null,
-        timezone: parsed.data.timezone || "UTC",
-      },
-    },
-  });
+  logSignupStage(stage, { validationSucceeded: true });
 
-  if (error) {
-    return authError(error.message);
+  let signUpData: Awaited<
+    ReturnType<Awaited<ReturnType<typeof createServerSupabaseClient>>["auth"]["signUp"]>
+  >["data"];
+
+  try {
+    stage = "creating_supabase_client";
+    const supabase = await createServerSupabaseClient();
+    stage = "supabase_client_created";
+    logSignupStage(stage);
+
+    stage = "building_email_redirect_url";
+    const emailRedirectTo = getSignupEmailRedirectTo();
+
+    stage = "before_auth_sign_up";
+    logSignupStage(stage, { hasEmailRedirectTo: Boolean(emailRedirectTo) });
+
+    const { data, error } = await supabase.auth.signUp({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      options: {
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
+        data: {
+          display_name: parsed.data.displayName || null,
+          timezone: parsed.data.timezone || "UTC",
+        },
+      },
+    });
+
+    stage = "after_auth_sign_up";
+    logSignupStage(stage, {
+      hasSession: Boolean(data.session),
+      hasUser: Boolean(data.user),
+      supabaseError: error ? normalizeAuthActionError(error) : null,
+    });
+
+    if (error) {
+      logSignupError("auth.signUp returned an error", error, {
+        hasSession: Boolean(data.session),
+        hasUser: Boolean(data.user),
+        stage,
+      });
+      return authError(error.message);
+    }
+
+    signUpData = data;
+  } catch (error) {
+    logSignupError("signup action failed before completion", error, { stage });
+    return authError("Unexpected signup failure.");
   }
 
-  if (data.session) {
+  if (signUpData.session) {
     redirect("/today");
   }
 
@@ -135,6 +197,86 @@ export async function logoutAction() {
 
 function readFormData(formData: FormData) {
   return Object.fromEntries(formData.entries());
+}
+
+function getSignupEmailRedirectTo() {
+  try {
+    return createApplicationUrl("/auth/callback", {
+      next: "/today",
+    }).toString();
+  } catch (error) {
+    if (error instanceof ApplicationUrlConfigurationError) {
+      logSignupError("email redirect URL could not be configured", error, {
+        stage: "building_email_redirect_url",
+      });
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
+function logSignupStage(
+  stage: SignupDiagnosticStage,
+  details: Record<string, unknown> = {},
+) {
+  if (process.env.AUTH_SIGNUP_DEBUG !== "1") {
+    return;
+  }
+
+  console.info("[auth:signup] stage reached", {
+    operation: "signup",
+    stage,
+    ...details,
+  });
+}
+
+function logSignupError(
+  context: string,
+  error: unknown,
+  details: Record<string, unknown> = {},
+) {
+  const normalized = normalizeAuthActionError(error);
+
+  console.error(`[auth:signup] ${context}`, {
+    operation: "signup",
+    code: normalized.code,
+    message: normalized.message,
+    name: normalized.name,
+    status: normalized.status,
+    ...details,
+  });
+}
+
+function normalizeAuthActionError(error: unknown): NormalizedAuthActionError {
+  if (typeof error === "string") {
+    return {
+      message: error,
+    };
+  }
+
+  if (!error || typeof error !== "object") {
+    return {
+      message: "Unknown auth action error",
+    };
+  }
+
+  const record = error as Record<string, unknown>;
+
+  return {
+    code: readString(record.code),
+    message: readString(record.message) ?? "Unknown auth action error",
+    name: readString(record.name),
+    status: readNumber(record.status),
+  };
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value ? value : undefined;
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" ? value : undefined;
 }
 
 function validationError(error: z.ZodError): AuthActionState {

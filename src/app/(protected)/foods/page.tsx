@@ -22,6 +22,7 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
   const searchTerm = q?.trim() ?? "";
   const { foods, error } = await getAuthenticatedFoods(searchTerm);
   const notice = created ? "Food created." : updated ? "Food updated." : null;
+  const isEmptyLibrary = foods.length === 0 && !searchTerm;
 
   return (
     <div className="min-w-0 space-y-5 sm:space-y-7">
@@ -84,9 +85,14 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
               : "Create reusable foods first, then log them here by grams."
           }
           illustrationSrc="/images/empty-states/nutrition-book.png"
+          mobileCompact={isEmptyLibrary}
           action={
             <OnlineOnlyLink
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
+              className={
+                isEmptyLibrary
+                  ? "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] sm:min-h-12 sm:gap-2 sm:px-5 sm:py-3 sm:text-base"
+                  : "inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
+              }
               href="/foods/new"
             >
               <ImagePlus aria-hidden="true" className="h-5 w-5" />

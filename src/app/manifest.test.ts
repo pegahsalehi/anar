@@ -4,7 +4,7 @@ import manifest from "./manifest";
 describe("manifest", () => {
   it("describes Anar as an installable standalone app", () => {
     expect(manifest()).toMatchObject({
-      name: "Anar - Personal Nutrition Tracker",
+      name: "Anar",
       short_name: "Anar",
       start_url: "/today",
       scope: "/",
