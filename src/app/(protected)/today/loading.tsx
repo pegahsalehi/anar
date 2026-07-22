@@ -1,9 +1,6 @@
-import { MobileAppLoadingScreen } from "@/components/ui/mobile-app-loading-screen";
-
 export default function TodayLoading() {
   return (
     <div aria-busy="true" className="space-y-7">
-      <MobileAppLoadingScreen />
       <span className="sr-only">Loading today</span>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 space-y-3">

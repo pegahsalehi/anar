@@ -1,9 +1,6 @@
-import { MobileAppLoadingScreen } from "@/components/ui/mobile-app-loading-screen";
-
 export default function SettingsLoading() {
   return (
     <div aria-busy="true" className="space-y-7">
-      <MobileAppLoadingScreen />
       <span className="sr-only">Loading settings</span>
       <div className="space-y-3">
         <div className="h-9 w-44 animate-pulse rounded-sm bg-muted" />

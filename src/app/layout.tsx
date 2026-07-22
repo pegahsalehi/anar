@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
+import { InstalledAppStartupScreen } from "@/components/pwa/installed-app-startup-screen";
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 import "./globals.css";
 
@@ -81,6 +82,7 @@ export default function RootLayout({
     <html className={manrope.variable} lang="en" dir="ltr">
       <body>
         {children}
+        <InstalledAppStartupScreen />
         <ServiceWorkerRegistration />
       </body>
     </html>
