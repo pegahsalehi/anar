@@ -16,7 +16,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: `${appName} - Personal Nutrition Tracker`,
+    default: appName,
     template: "%s | Anar",
   },
   description: appDescription,
