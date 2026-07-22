@@ -1,7 +1,5 @@
-import { CalendarPreview } from "@/components/history/calendar-preview";
-import { WeeklyProgressChart } from "@/components/history/weekly-progress-chart";
 import { PageHeader } from "@/components/layout/page-header";
-import { StreakCard } from "@/components/nutrition/streak-card";
+import { HistoryPageContent } from "@/features/history/components/history-page-content";
 import { getHistoryActiveDates } from "@/features/history/queries";
 
 export const metadata = {
@@ -17,7 +15,7 @@ type HistoryPageProps = {
 export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   const params = await searchParams;
   const requestedWeek = Array.isArray(params?.week) ? params?.week[0] : params?.week;
-  const { activeDates, error, streak, weeklyProgress } =
+  const { activeDateCounts, activeDates, error, streak, weeklyProgress } =
     await getHistoryActiveDates(requestedWeek);
   const latestDate = activeDates[0];
 
@@ -32,15 +30,13 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
           {error}
         </p>
       ) : null}
-      <StreakCard {...streak} />
-      <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
-        <CalendarPreview
-          activeDates={activeDates}
-          selectedDate={latestDate}
-          weekStartsOn={weeklyProgress.weekStartsOn}
-        />
-        <WeeklyProgressChart data={weeklyProgress} />
-      </div>
+      <HistoryPageContent
+        activeDateCounts={activeDateCounts}
+        activeDates={activeDates}
+        selectedDate={latestDate}
+        streak={streak}
+        weeklyProgress={weeklyProgress}
+      />
     </div>
   );
 }

@@ -13,18 +13,24 @@ import {
 } from "react";
 import { useFormStatus } from "react-dom";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
-import { Heart, ImagePlus, Save, X } from "lucide-react";
+import { ImagePlus, Save, X } from "lucide-react";
 import {
   getNutrientInputStyleVariables,
   nutrientPalette,
   type NutrientVariant,
 } from "@/components/nutrition/nutrient-theme";
+import {
+  OfflineMutationNotice,
+  offlineMutationMessage,
+  useOnlineStatus,
+} from "@/components/pwa/online-status";
 import type { FoodFormValues, FoodMutationState, FoodRow } from "@/features/foods/types";
 import { initialFoodMutationState } from "@/features/foods/types";
 import {
   formatFoodImageFileSize,
   prepareFoodImageForUpload,
 } from "@/features/foods/image-processing";
+import { DEFAULT_FOOD_IMAGE_SRC } from "@/lib/food-image";
 import { getFoodNumberValidationError } from "@/features/foods/validation";
 import { cn } from "@/lib/utils";
 
@@ -94,6 +100,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
   const selectedFiles = watch("image");
   const selectedFile = selectedFiles?.[0] ?? null;
   const title = useMemo(() => (food ? "Edit food" : "Create food"), [food]);
+  const { isOnline } = useOnlineStatus();
 
   const resetImageSelection = useCallback(() => {
     resetField("image");
@@ -195,6 +202,11 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
   }
 
   function validateClientForm(event: FormEvent<HTMLFormElement>) {
+    if (!isOnline) {
+      event.preventDefault();
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const nextErrors: FoodMutationState["fieldErrors"] = {};
 
@@ -237,6 +249,8 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
     return clientFieldErrors[field] ?? state.fieldErrors[field];
   }
 
+  const previewImageSrc = previewUrl ?? DEFAULT_FOOD_IMAGE_SRC;
+
   return (
     <form
       action={formAction}
@@ -249,21 +263,13 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
           {state.message}
         </p>
       ) : null}
-      <div className="grid gap-4 lg:grid-cols-[18rem_1fr] lg:gap-5">
+      <div className="grid gap-4 lg:grid-cols-[15.5rem_1fr] lg:gap-5">
         <div className="space-y-2.5 sm:space-y-3">
           <div className="relative aspect-[16/9] max-h-[12.5rem] min-h-[8.75rem] overflow-hidden rounded-md border border-soft-border bg-surface-soft sm:aspect-[4/3] sm:max-h-none lg:aspect-square">
-            {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img alt={`${title} preview`} className="h-full w-full object-cover" src={previewUrl} />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                <ImagePlus aria-hidden="true" className="h-7 w-7 text-primary sm:h-9 sm:w-9" />
-                <span className="text-sm font-medium">No image</span>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <label className="inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-soft-border bg-surface-soft px-3 py-2 text-sm font-semibold text-foreground transition hover:border-[rgb(var(--field-neutral-border-hover))] hover:bg-surface-muted sm:min-h-11 sm:px-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt={`${title} preview`} className="h-full w-full object-cover" src={previewImageSrc} />
+            <div className="absolute inset-x-3 bottom-3 flex gap-2">
+              <label className="inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-soft-border bg-card/95 px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:border-[rgb(var(--field-neutral-border-hover))] hover:bg-card focus-within:ring-4 focus-within:ring-primary/15 sm:px-4">
               <ImagePlus aria-hidden="true" className="h-4 w-4" />
               Choose image
               <input
@@ -283,17 +289,18 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
                 }}
                 type="file"
               />
-            </label>
-            {previewUrl ? (
-              <button
-                aria-label="Remove image"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-coral hover:text-coral"
-                onClick={removeImage}
-                type="button"
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </button>
-            ) : null}
+              </label>
+              {previewUrl ? (
+                <button
+                  aria-label="Remove image"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-card/95 text-muted-foreground shadow-sm transition hover:border-coral hover:bg-card hover:text-coral focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-coral/15"
+                  onClick={removeImage}
+                  type="button"
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
             JPEG, PNG, or WebP. Images over 1 MB are resized.
@@ -329,7 +336,7 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
           <p className="text-xs font-semibold leading-5 text-muted-foreground">
             Enter values per 100 g
           </p>
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
             <NutritionInputField
               error={getFieldError("caloriesPer100g")}
               field="caloriesPer100g"
@@ -371,26 +378,24 @@ export function FoodForm({ action, food, imageUrl, submitLabel }: FoodFormProps)
               variant="fat"
             />
           </div>
-          <label className="flex min-h-11 items-center gap-3 rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 shadow-sm transition hover:border-[rgb(var(--field-neutral-border-hover))] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15 sm:min-h-12">
+          <label className="flex min-h-11 w-fit items-center gap-2.5 rounded-md border border-[rgb(var(--field-neutral-border))] bg-surface-soft px-3 text-sm font-semibold transition hover:border-[rgb(var(--field-neutral-border-hover))] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15">
             <input className="h-5 w-5 accent-primary" type="checkbox" {...register("isFavorite")} />
-            <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <Heart aria-hidden="true" className="h-4 w-4" />
-              Mark as favorite
-            </span>
+            <span>Mark as favorite</span>
           </label>
           <FieldError message={getFieldError("notes")}>
             <label className="block">
-              <span className="text-sm font-semibold">Notes</span>
+              <span className="text-sm font-semibold">Notes · Optional</span>
               <textarea
                 className={neutralTextareaClassName}
-                placeholder="Optional details"
+                placeholder="Brand, ingredients, preparation, or other details"
                 {...register("notes")}
               />
             </label>
           </FieldError>
         </div>
       </div>
-      <div className="flex justify-end">
+      <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <OfflineMutationNotice className="self-start sm:mr-auto sm:self-center" />
         <SubmitButton disabled={imageProcessing.status === "processing"}>
           {submitLabel}
         </SubmitButton>
@@ -434,10 +439,10 @@ function NutritionInputField({
       </span>
       <span
         className={cn(
-          "mt-1.5 flex min-h-11 w-full items-center gap-1.5 rounded-md border-2 px-2 shadow-sm transition focus-within:ring-4 sm:mt-2 sm:min-h-12 sm:px-3",
+          "mt-1.5 flex min-h-11 w-full items-center gap-1.5 rounded-md border px-2 transition focus-within:ring-4 sm:mt-2 sm:min-h-12 sm:px-3",
           error
             ? "border-coral bg-coral/5 focus-within:border-coral focus-within:ring-coral/15"
-            : "border-[var(--nutrient-input-border)] bg-[var(--nutrient-input-bg)] shadow-[var(--nutrient-input-shadow)] focus-within:border-[var(--nutrient-input-border-focus)] focus-within:ring-[var(--nutrient-input-ring)]",
+            : "border-[var(--nutrient-input-border)] bg-[var(--nutrient-input-bg)] focus-within:border-[var(--nutrient-input-border-focus)] focus-within:ring-[var(--nutrient-input-ring)]",
         )}
         style={getNutrientInputStyleVariables(variant)}
       >
@@ -491,14 +496,16 @@ function SubmitButton({
   disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
+  const { isOnline } = useOnlineStatus();
 
   return (
     <button
       className={cn(
         "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition sm:min-h-12 sm:px-5 sm:py-3",
-        "hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-wait disabled:opacity-70",
+        "hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-not-allowed disabled:opacity-70",
       )}
-      disabled={pending || disabled}
+      disabled={pending || disabled || !isOnline}
+      title={!isOnline ? offlineMutationMessage : undefined}
       type="submit"
     >
       <Save aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5" />

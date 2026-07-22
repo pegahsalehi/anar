@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { changePasswordAction } from "@/features/settings/actions";
 import { initialChangePasswordActionState } from "@/features/settings/types";
 import { PasswordInputField } from "@/features/auth/components/password-input-field";
+import { OfflineMutationNotice, useOnlineStatus } from "@/components/pwa/online-status";
 import {
   SettingsActionMessage,
   SettingsSubmitButton,
@@ -15,6 +16,7 @@ export function ProfilePasswordForm() {
     initialChangePasswordActionState,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const { isOnline } = useOnlineStatus();
 
   useEffect(() => {
     if (state.status === "success") {
@@ -23,7 +25,16 @@ export function ProfilePasswordForm() {
   }, [state.status]);
 
   return (
-    <form action={formAction} className="mt-5" ref={formRef}>
+    <form
+      action={formAction}
+      className="mt-5"
+      onSubmit={(event) => {
+        if (!isOnline) {
+          event.preventDefault();
+        }
+      }}
+      ref={formRef}
+    >
       <SettingsActionMessage message={state.message} status={state.status} />
 
       <div className="mt-5 grid gap-4">
@@ -59,7 +70,8 @@ export function ProfilePasswordForm() {
         Use at least 8 characters with a letter and a number.
       </p>
 
-      <div className="mt-5 flex justify-end">
+      <div className="mt-5 flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <OfflineMutationNotice className="self-start sm:mr-auto sm:self-center" />
         <SettingsSubmitButton>Update password</SettingsSubmitButton>
       </div>
     </form>

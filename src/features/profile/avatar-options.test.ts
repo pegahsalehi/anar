@@ -26,7 +26,6 @@ describe("avatar options", () => {
       profileIdentitySchema.safeParse({
         avatarId: "1",
         displayName: "Anar User",
-        email: "user@example.com",
       }).success,
     ).toBe(true);
 
@@ -34,7 +33,6 @@ describe("avatar options", () => {
       profileIdentitySchema.safeParse({
         avatarId: "pomegranate",
         displayName: "Anar User",
-        email: "user@example.com",
       }).success,
     ).toBe(false);
   });

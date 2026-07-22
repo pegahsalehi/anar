@@ -2,6 +2,11 @@
 
 import { useRef, useState } from "react";
 import { Trash2, X } from "lucide-react";
+import {
+  OfflineMutationNotice,
+  offlineMutationMessage,
+  useOnlineStatus,
+} from "@/components/pwa/online-status";
 import { softDeleteFoodAction } from "@/features/foods/actions";
 
 type DeleteFoodButtonProps = {
@@ -13,13 +18,18 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const action = softDeleteFoodAction.bind(null, foodId);
+  const { isOnline } = useOnlineStatus();
 
   return (
     <>
       <button
-        aria-label={`Delete ${foodName}`}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:border-coral hover:text-coral"
+        aria-label={
+          isOnline ? `Delete ${foodName}` : `Delete ${foodName}. ${offlineMutationMessage}`
+        }
+        className="inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition hover:bg-coral/10 hover:text-coral disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/35"
+        disabled={!isOnline}
         onClick={() => setIsOpen(true)}
+        title={!isOnline ? offlineMutationMessage : undefined}
         type="button"
       >
         <Trash2 aria-hidden="true" className="h-4 w-4" />
@@ -59,6 +69,7 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
                 <X aria-hidden="true" className="h-4 w-4" />
               </button>
             </div>
+            <OfflineMutationNotice className="mt-4" />
             <div className="mt-5 flex justify-end gap-3">
               <button
                 className="min-h-11 rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
@@ -67,9 +78,18 @@ export function DeleteFoodButton({ foodId, foodName }: DeleteFoodButtonProps) {
               >
                 Cancel
               </button>
-              <form action={action}>
+              <form
+                action={action}
+                onSubmit={(event) => {
+                  if (!isOnline) {
+                    event.preventDefault();
+                  }
+                }}
+              >
                 <button
-                  className="min-h-11 rounded-md bg-coral px-4 py-2 text-sm font-semibold text-coral-foreground transition hover:bg-coral/90"
+                  className="min-h-11 rounded-md bg-coral px-4 py-2 text-sm font-semibold text-coral-foreground transition hover:bg-coral/90 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={!isOnline}
+                  title={!isOnline ? offlineMutationMessage : undefined}
                   type="submit"
                 >
                   Delete

@@ -1,7 +1,9 @@
-const CACHE_VERSION = "20260720-v1";
+const CACHE_VERSION = "20260722-v2";
 const STATIC_CACHE = `anar-static-${CACHE_VERSION}`;
+const OFFLINE_FALLBACK_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
+  OFFLINE_FALLBACK_URL,
   "/brand/anar-icon.png",
   "/brand/anar-logo.png",
   "/icons/pwa/apple-touch-icon.png",
@@ -52,7 +54,16 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  if (url.origin !== self.location.origin || shouldBypassCache(request, url)) {
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (isDocumentNavigation(request)) {
+    event.respondWith(networkFirstNavigation(request));
+    return;
+  }
+
+  if (shouldBypassCache(request, url)) {
     return;
   }
 
@@ -65,7 +76,6 @@ function shouldBypassCache(request, url) {
   const { pathname } = url;
 
   return (
-    request.mode === "navigate" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
@@ -85,8 +95,28 @@ function isSafeStaticAsset(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/brand/") ||
-    url.pathname.startsWith("/icons/pwa/")
+    url.pathname.startsWith("/icons/pwa/") ||
+    url.pathname === OFFLINE_FALLBACK_URL
   );
+}
+
+function isDocumentNavigation(request) {
+  return (
+    request.mode === "navigate" ||
+    request.destination === "document" ||
+    request.headers.get("accept")?.includes("text/html")
+  );
+}
+
+async function networkFirstNavigation(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    const cache = await caches.open(STATIC_CACHE);
+    const fallback = await cache.match(OFFLINE_FALLBACK_URL);
+
+    return fallback || Response.error();
+  }
 }
 
 async function staleWhileRevalidate(request) {

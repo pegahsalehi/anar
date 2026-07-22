@@ -52,6 +52,7 @@ type WeeklyFoodLogRow = Pick<
 
 type HistoryDateData = {
   activeDates: string[];
+  activeDateCounts: Record<string, number>;
   weekStartsOn: WeekStartsOn;
   streak: LogDayStats;
   logs: FoodLogListItem[];
@@ -61,6 +62,7 @@ type HistoryDateData = {
 
 type HistoryActiveDatesData = {
   activeDates: string[];
+  activeDateCounts: Record<string, number>;
   weeklyProgress: WeeklyProgressData;
   streak: LogDayStats;
   error: string | null;
@@ -118,10 +120,13 @@ export async function getHistoryActiveDates(
       .order("effective_date", { ascending: true }),
   ]);
 
-  const activeDates = getUniqueActiveDates(activeDatesResult.data);
+  const activeDateRows = (activeDatesResult.data ?? []) as LogDayRow[];
+  const activeDates = getUniqueActiveDates(activeDateRows);
+  const activeDateCounts = getActiveDateCounts(activeDateRows);
 
   return {
     activeDates,
+    activeDateCounts,
     weeklyProgress: buildWeeklyProgressData({
       goals: (weeklyGoalsResult.data ?? []) as WeeklyGoalRow[],
       logs: (weeklyLogsResult.data ?? []) as WeeklyFoodLogRow[],
@@ -191,7 +196,9 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
   const timezone = profile?.timezone ?? "UTC";
   const timeFormat = profile?.time_format ?? "12h";
   const weekStartsOn = profile?.week_starts_on ?? "monday";
-  const activeDates = getUniqueActiveDates(activeDatesResult.data);
+  const activeDateRows = (activeDatesResult.data ?? []) as LogDayRow[];
+  const activeDates = getUniqueActiveDates(activeDateRows);
+  const activeDateCounts = getActiveDateCounts(activeDateRows);
   const imageUrls = await createSignedImageUrlMap(
     supabase,
     ((logsResult.data ?? []) as FoodLogRow[]).map((log) => log.image_path_snapshot),
@@ -235,6 +242,7 @@ export async function getHistoryDateData(date: string): Promise<HistoryDateData>
 
   return {
     activeDates,
+    activeDateCounts,
     weekStartsOn,
     streak: calculateLogDayStats(activeDates, getLocalISODate(new Date(), timezone)),
     logs,
@@ -252,6 +260,7 @@ function buildEmptyHistoryActiveDatesData(weekStart?: string): HistoryActiveDate
 
   return {
     activeDates: [],
+    activeDateCounts: {},
     weeklyProgress: buildWeeklyProgressData({
       goals: [],
       logs: [],
@@ -268,6 +277,7 @@ function buildEmptyHistoryDateData(): HistoryDateData {
 
   return {
     activeDates: [],
+    activeDateCounts: {},
     weekStartsOn: "monday",
     streak: calculateLogDayStats([], today),
     logs: [],
@@ -283,4 +293,11 @@ function getUniqueActiveDates(rows: unknown) {
   return Array.from(
     new Set(((rows ?? []) as LogDayRow[]).map((log) => log.local_log_date)),
   );
+}
+
+function getActiveDateCounts(rows: unknown) {
+  return ((rows ?? []) as LogDayRow[]).reduce<Record<string, number>>((counts, log) => {
+    counts[log.local_log_date] = (counts[log.local_log_date] ?? 0) + 1;
+    return counts;
+  }, {});
 }

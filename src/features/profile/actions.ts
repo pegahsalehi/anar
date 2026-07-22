@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { z } from "zod";
 import { normalizeAvatarId } from "@/features/profile/avatar-options";
 import { profileIdentitySchema } from "@/features/profile/schemas";
@@ -23,8 +22,7 @@ type ProfileOperation =
   | "auth.getUser"
   | "profiles.select"
   | "profiles.update"
-  | "profiles.upsert"
-  | "auth.updateUser.email";
+  | "profiles.upsert";
 type NormalizedSupabaseError = {
   code?: string;
   details?: string | null;
@@ -69,18 +67,6 @@ export async function saveProfileIdentityAction(
     };
   }
 
-  const currentEmail = normalizeEmail(user.email);
-
-  if (!currentEmail) {
-    return {
-      status: "error",
-      message: SESSION_EXPIRED_MESSAGE,
-      fieldErrors: {
-        email: "Your active account email could not be loaded.",
-      },
-    };
-  }
-
   const profileResult = await supabase
     .from("profiles")
     .select("avatar_id, display_name")
@@ -105,19 +91,15 @@ export async function saveProfileIdentityAction(
     user.user_metadata?.display_name,
   );
   const currentAvatarId = normalizeAvatarId(currentProfile?.avatar_id);
-  const emailChanged = parsed.data.email !== currentEmail;
   const profileChanged =
     parsed.data.displayName !== currentDisplayName || parsed.data.avatarId !== currentAvatarId;
-  let activeEmail = user.email ?? "";
-  let emailConfirmationRequired = false;
-  let emailUpdateError: string | null = null;
   let profileUpdateError: string | null = null;
   let profileUpdated = false;
 
   let savedProfile: ProfileIdentityValues = {
     avatarId: currentAvatarId,
     displayName: currentDisplayName,
-    email: activeEmail,
+    email: user.email ?? "",
   };
 
   if (profileChanged) {
@@ -161,61 +143,21 @@ export async function saveProfileIdentityAction(
       savedProfile = {
         avatarId: normalizeAvatarId(updatedProfile.avatar_id),
         displayName: getDisplayName(updatedProfile.display_name, user.user_metadata?.display_name),
-        email: activeEmail,
+        email: user.email ?? "",
       };
       profileUpdated = true;
     }
   }
 
-  if (emailChanged) {
-    const origin = await getRequestOrigin();
-    const { data, error: emailError } = await supabase.auth.updateUser(
-      {
-        email: parsed.data.email,
-      },
-      {
-        emailRedirectTo: `${origin}/auth/callback?next=/profile`,
-      },
-    );
-
-    if (emailError) {
-      logProfileOperationError("auth.updateUser.email", emailError, {
-        userId: user.id,
-      });
-      emailUpdateError = translateEmailUpdateError(emailError.message);
-    } else {
-      const returnedEmail = normalizeEmail(data.user?.email);
-      emailConfirmationRequired = returnedEmail !== parsed.data.email;
-      activeEmail = emailConfirmationRequired
-        ? user.email ?? ""
-        : (data.user?.email ?? parsed.data.email);
-      savedProfile = {
-        ...savedProfile,
-        email: activeEmail,
-      };
-    }
-  }
-
-  if (profileUpdateError || emailUpdateError) {
-    const fieldErrors: ProfileIdentityActionState["fieldErrors"] = {};
-
-    if (emailUpdateError) {
-      fieldErrors.email = emailUpdateError;
-    }
-
-    if (profileUpdated || (emailChanged && !emailUpdateError)) {
+  if (profileUpdateError) {
+    if (profileUpdated) {
       revalidateProfileIdentityPaths();
     }
 
     return {
       status: "error",
-      message: getSaveErrorMessage({
-        emailUpdateError,
-        profileUpdateError,
-        profileUpdated,
-      }),
-      fieldErrors,
-      emailError: emailUpdateError,
+      message: profileUpdateError,
+      fieldErrors: {},
       profile: profileUpdated ? savedProfile : undefined,
       profileError: profileUpdateError,
       profileUpdated,
@@ -226,11 +168,8 @@ export async function saveProfileIdentityAction(
 
   return {
     status: "success",
-    message: emailConfirmationRequired
-      ? "Check your new email address to confirm the change."
-      : "Profile saved.",
+    message: "Profile saved.",
     fieldErrors: {},
-    emailConfirmationRequired,
     profile: savedProfile,
     profileUpdated,
   };
@@ -255,11 +194,7 @@ function profileIdentityValidationError(error: z.ZodError): ProfileIdentityActio
 }
 
 function isProfileIdentityField(value: unknown): value is ProfileIdentityField {
-  return value === "displayName" || value === "email" || value === "avatarId";
-}
-
-function normalizeEmail(value: string | null | undefined) {
-  return value?.trim().toLowerCase() ?? "";
+  return value === "displayName" || value === "avatarId";
 }
 
 function getDisplayName(profileName: string | null | undefined, metadataName: unknown) {
@@ -276,68 +211,12 @@ function getDisplayName(profileName: string | null | undefined, metadataName: un
   return "User";
 }
 
-function translateEmailUpdateError(message: string) {
-  const normalized = message.toLowerCase();
-
-  if (normalized.includes("already") || normalized.includes("registered")) {
-    return "An account already exists for this email.";
-  }
-
-  if (normalized.includes("invalid") || normalized.includes("email")) {
-    return "Enter a valid email address.";
-  }
-
-  if (
-    normalized.includes("session") ||
-    normalized.includes("jwt") ||
-    normalized.includes("token") ||
-    normalized.includes("expired")
-  ) {
-    return SESSION_EXPIRED_MESSAGE;
-  }
-
-  if (normalized.includes("reauthentication") || normalized.includes("recent")) {
-    return "Please log in again before changing your email.";
-  }
-
-  return "Email could not be updated. Please try again.";
-}
-
-async function getRequestOrigin() {
-  const headerStore = await headers();
-  return headerStore.get("origin") ?? "http://localhost:3000";
-}
-
 function revalidateProfileIdentityPaths() {
   revalidatePath("/profile");
   revalidatePath("/foods");
   revalidatePath("/settings");
   revalidatePath("/today");
   revalidatePath("/history");
-}
-
-function getSaveErrorMessage({
-  emailUpdateError,
-  profileUpdateError,
-  profileUpdated,
-}: {
-  emailUpdateError: string | null;
-  profileUpdateError: string | null;
-  profileUpdated: boolean;
-}) {
-  if (profileUpdateError && emailUpdateError) {
-    return "Profile details and email could not be saved.";
-  }
-
-  if (profileUpdateError) {
-    return profileUpdateError;
-  }
-
-  if (profileUpdated) {
-    return "Profile details saved, but email could not be updated.";
-  }
-
-  return "Email could not be updated.";
 }
 
 function getProfilePersistenceErrorMessage(error: unknown) {

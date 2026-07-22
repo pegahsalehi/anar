@@ -4,7 +4,7 @@ import type { Database } from "@/types/database";
 import { getSupabasePublicEnv } from "@/lib/env";
 
 const protectedPrefixes = ["/today", "/foods", "/history", "/profile", "/settings"];
-const authPrefixes = ["/login", "/signup", "/forgot-password", "/reset-password"];
+const signedInAuthRedirectPrefixes = ["/login", "/signup", "/forgot-password"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -35,7 +35,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-  const isAuthRoute = authPrefixes.some((prefix) => pathname.startsWith(prefix));
+  const shouldRedirectSignedInAuthRoute = signedInAuthRedirectPrefixes.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
 
   if (isProtected && !user) {
     const redirectUrl = request.nextUrl.clone();
@@ -44,7 +46,7 @@ export async function middleware(request: NextRequest) {
     return copyCookies(response, NextResponse.redirect(redirectUrl));
   }
 
-  if (isAuthRoute && user) {
+  if (shouldRedirectSignedInAuthRoute && user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/today";
     redirectUrl.search = "";

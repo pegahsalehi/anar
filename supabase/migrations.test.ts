@@ -151,6 +151,18 @@ describe("Supabase migrations", () => {
     expect(profileSelfInsertMigration).not.toMatch(/using\s*\(\s*true\s*\)/i);
   });
 
+  it("cascades user-owned database rows when an Auth user is deleted", () => {
+    expect(schemaMigration).toContain(
+      "id uuid primary key references auth.users(id) on delete cascade",
+    );
+    expect(schemaMigration).toContain(
+      "user_id uuid not null references auth.users(id) on delete cascade",
+    );
+    expect(schemaMigration.match(/references auth\.users\(id\) on delete cascade/g)).toHaveLength(
+      4,
+    );
+  });
+
   it("adds fat columns with safe backfills and constraints", () => {
     expect(fatMigration).toContain("add column if not exists fat_target");
     expect(fatMigration).toContain("add column if not exists fat_per_100g");

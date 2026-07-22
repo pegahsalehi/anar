@@ -20,6 +20,11 @@ import {
   type NutrientVariant,
 } from "@/components/nutrition/nutrient-theme";
 import {
+  OfflineMutationNotice,
+  offlineMutationMessage,
+  useOnlineStatus,
+} from "@/components/pwa/online-status";
+import {
   initialDailyNutritionTargetActionState,
   type DailyNutritionTargetField,
   type DailyNutritionTargetValues,
@@ -81,6 +86,7 @@ export function DailyNutritionTargetsForm({
   const [savedValues, setSavedValues] = useState(initialValues);
   const pendingValuesRef = useRef<DailyNutritionTargetValues | null>(null);
   const router = useRouter();
+  const { isOnline } = useOnlineStatus();
 
   useEffect(() => {
     if (state.status === "success") {
@@ -94,6 +100,12 @@ export function DailyNutritionTargetsForm({
   }, [router, state]);
 
   function validateClientForm(event: FormEvent<HTMLFormElement>) {
+    if (!isOnline) {
+      pendingValuesRef.current = null;
+      event.preventDefault();
+      return;
+    }
+
     const result = validateDailyNutritionTargetFormData(new FormData(event.currentTarget));
 
     if (!result.ok) {
@@ -138,21 +150,21 @@ export function DailyNutritionTargetsForm({
       <form action={formAction} className="mt-4 sm:mt-5" onSubmit={validateClientForm}>
         <SettingsActionMessage message={state.message} status={state.status} />
 
-        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3 xl:grid-cols-4">
           {nutrients.map((nutrient) => (
             <NutrientSurface
               as="section"
-              className="p-3 sm:p-4"
+              className="border-l-2 p-2.5 sm:p-3"
               key={nutrient.variant}
               variant={nutrient.variant}
             >
               <h3
-                className="text-sm font-semibold"
+                className="text-[0.8rem] font-semibold sm:text-sm"
                 style={{ color: nutrientPalette[nutrient.variant].color }}
               >
                 {nutrient.label}
               </h3>
-              <div className="mt-2 sm:mt-3">
+              <div className="mt-1.5 sm:mt-2">
                 <GoalInput
                   defaultValue={initialValues[nutrient.name]}
                   error={getFieldError(nutrient.name)}
@@ -166,7 +178,8 @@ export function DailyNutritionTargetsForm({
           ))}
         </div>
 
-        <div className="mt-4 flex justify-end sm:mt-5">
+        <div className="mt-4 flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <OfflineMutationNotice className="self-start sm:mr-auto sm:self-center" />
           <SettingsSubmitButton>Save targets</SettingsSubmitButton>
         </div>
       </form>
@@ -198,7 +211,7 @@ function GoalInput({
       </span>
       <span
         className={cn(
-          "mt-1 flex min-h-10 items-center gap-1.5 rounded-md border border-border bg-card px-2 shadow-sm transition focus-within:ring-4 sm:min-h-11 sm:gap-2 sm:px-3",
+          "mt-1 flex min-h-10 items-center gap-1 rounded-md border border-border bg-background px-2 transition focus-within:ring-4 sm:gap-2 sm:px-2.5",
           "focus-within:border-[var(--nutrient-color)] focus-within:ring-[var(--nutrient-ring)]",
           error && "border-coral focus-within:border-coral focus-within:ring-coral/15",
         )}
@@ -263,11 +276,13 @@ export function SettingsSubmitButton({
   disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
+  const { isOnline } = useOnlineStatus();
 
   return (
     <button
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-wait disabled:opacity-70"
-      disabled={pending || disabled}
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-not-allowed disabled:opacity-70"
+      disabled={pending || disabled || !isOnline}
+      title={!isOnline ? offlineMutationMessage : undefined}
       type="submit"
     >
       <Save aria-hidden="true" className="h-4 w-4" />

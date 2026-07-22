@@ -172,21 +172,6 @@ export function MobileNavigationDrawer() {
         type="button"
       >
         <Menu aria-hidden="true" className="h-5 w-5" strokeWidth={2.1} />
-        <AnarLogo
-          className="hidden min-[390px]:inline-flex"
-          decorative
-          href={null}
-          imageClassName="w-[84px]"
-          imageSizes="84px"
-          variant="nav"
-        />
-        <AnarLogo
-          className="min-[390px]:hidden"
-          compact
-          decorative
-          href={null}
-          imageClassName="h-9 w-9"
-        />
       </button>
       {isMounted ? createPortal(drawer, document.body) : null}
     </>

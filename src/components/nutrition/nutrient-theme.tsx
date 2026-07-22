@@ -42,7 +42,7 @@ export function NutrientSurface({
   return (
     <Component
       className={cn(
-        "relative overflow-hidden rounded-md border-2 shadow-sm",
+        "relative overflow-hidden rounded-md border bg-card",
         className,
       )}
       style={{
@@ -72,7 +72,7 @@ export function NutrientChip({
   return (
     <div
       className={cn(
-        "min-w-0 rounded-md border-2 px-2 py-2 shadow-sm",
+        "min-w-0 rounded-md border px-2 py-1.5",
         className,
       )}
       style={getNutrientSurfaceStyle(variant)}
@@ -95,7 +95,7 @@ export function getNutrientStyleVariables(variant: NutrientVariant) {
 
   return {
     "--nutrient-color": color,
-    "--nutrient-border": withAlpha(color, 0.36),
+    "--nutrient-border": withAlpha(color, 0.2),
     "--nutrient-ring": withAlpha(color, 0.18),
   } as CSSProperties;
 }
@@ -106,10 +106,10 @@ export function getNutrientInputStyleVariables(variant: NutrientVariant) {
   return {
     ...getNutrientStyleVariables(variant),
     "--nutrient-input-bg": withAlpha(color, 0.045),
-    "--nutrient-input-border": withAlpha(color, 0.56),
-    "--nutrient-input-border-focus": withAlpha(color, 0.78),
+    "--nutrient-input-border": withAlpha(color, 0.2),
+    "--nutrient-input-border-focus": withAlpha(color, 0.62),
     "--nutrient-input-ring": withAlpha(color, 0.15),
-    "--nutrient-input-shadow": `0 10px 22px ${withAlpha(color, 0.055)}`,
+    "--nutrient-input-shadow": `0 8px 18px ${withAlpha(color, 0.04)}`,
   } as CSSProperties;
 }
 
@@ -122,12 +122,8 @@ function getNutrientSurfaceStyle(variant: NutrientVariant) {
 
   return {
     ...getNutrientStyleVariables(variant),
-    backgroundColor: withAlpha(color, 0.035),
-    backgroundImage: `repeating-linear-gradient(135deg, ${withAlpha(
-      color,
-      0.05,
-    )} 0 1px, transparent 1px 8px)`,
-    borderColor: withAlpha(color, 0.36),
+    backgroundColor: withAlpha(color, 0.025),
+    borderColor: withAlpha(color, 0.18),
   } as CSSProperties;
 }
 

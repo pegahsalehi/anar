@@ -7,6 +7,7 @@ type PageHeaderProps = {
   eyebrow?: string;
   eyebrowClassName?: string;
   action?: ReactNode;
+  compactMobile?: boolean;
 };
 
 export function PageHeader({
@@ -15,9 +16,10 @@ export function PageHeader({
   eyebrow,
   eyebrowClassName,
   action,
+  compactMobile = false,
 }: PageHeaderProps) {
   return (
-    <header className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+    <header className={cn("flex min-w-0 flex-col sm:flex-row sm:items-end sm:justify-between sm:gap-4", compactMobile ? "gap-2.5" : "gap-3")}>
       <div className="flex min-w-0 items-start justify-between gap-3 sm:block">
         <div className="min-w-0">
           {eyebrow ? (
@@ -25,11 +27,21 @@ export function PageHeader({
               {eyebrow}
             </p>
           ) : null}
-          <h1 className="mt-0.5 text-[1.65rem] font-semibold leading-8 text-foreground sm:mt-1 sm:text-3xl sm:leading-10">
+          <h1
+            className={cn(
+              "mt-0.5 font-semibold text-foreground sm:mt-1 sm:text-3xl sm:leading-10",
+              compactMobile ? "text-[1.5rem] leading-7" : "text-[1.65rem] leading-8",
+            )}
+          >
             {title}
           </h1>
           {description ? (
-            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground sm:mt-2 sm:leading-7">
+            <p
+              className={cn(
+                "max-w-2xl text-muted-foreground sm:mt-2 sm:text-sm sm:leading-7",
+                compactMobile ? "mt-1 text-[0.8rem] leading-5" : "mt-1.5 text-sm leading-6",
+              )}
+            >
               {description}
             </p>
           ) : null}

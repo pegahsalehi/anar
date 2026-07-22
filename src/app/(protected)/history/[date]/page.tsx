@@ -36,6 +36,7 @@ export default async function HistoryDatePage({ params }: HistoryDatePageProps) 
       <StreakCard {...data.streak} />
       <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
         <CalendarPreview
+          activeDateCounts={data.activeDateCounts}
           activeDates={data.activeDates}
           selectedDate={date}
           weekStartsOn={data.weekStartsOn}

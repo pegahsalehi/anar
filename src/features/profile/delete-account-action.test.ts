@@ -86,7 +86,14 @@ describe("deleteAccountAction", () => {
       signOutMock,
       user: authenticatedUser(),
     });
-    const adminMock = createAdminSupabaseMock();
+    const adminMock = createAdminSupabaseMock({
+      storageObjects: [
+        storageObject("user-1", "profile.webp"),
+        storageObject("user-1", "food-a.webp"),
+        storageObject("user-1", "log-snapshot.webp"),
+        storageObject("other-user", "not-owned.webp"),
+      ],
+    });
     createServerSupabaseClientMock.mockResolvedValue(serverMock.supabase);
     createSupabaseAdminClientMock.mockReturnValue(adminMock.supabase);
 
@@ -104,7 +111,7 @@ describe("deleteAccountAction", () => {
       "user-1/log-snapshot.webp",
     ]);
     expect(adminMock.deleteUserMock).toHaveBeenCalledWith("user-1", false);
-    expect(signOutMock).toHaveBeenCalled();
+    expect(signOutMock).toHaveBeenCalledWith({ scope: "global" });
   });
 
   it("deletes the Auth user only after Storage cleanup succeeds", async () => {
@@ -112,7 +119,9 @@ describe("deleteAccountAction", () => {
       foods: [{ image_path: "user-1/food.webp" }],
       user: authenticatedUser(),
     });
-    const adminMock = createAdminSupabaseMock();
+    const adminMock = createAdminSupabaseMock({
+      storageObjects: [storageObject("user-1", "food.webp")],
+    });
     createServerSupabaseClientMock.mockResolvedValue(serverMock.supabase);
     createSupabaseAdminClientMock.mockReturnValue(adminMock.supabase);
 
@@ -132,6 +141,7 @@ describe("deleteAccountAction", () => {
       user: authenticatedUser(),
     });
     const adminMock = createAdminSupabaseMock({
+      storageObjects: [storageObject("user-1", "food.webp")],
       storageError: {
         message: "Storage unavailable",
       },
@@ -148,6 +158,30 @@ describe("deleteAccountAction", () => {
     });
     expect(adminMock.deleteUserMock).not.toHaveBeenCalled();
     expect(serverMock.signOutMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a safe error when Storage listing fails", async () => {
+    const serverMock = createDeleteAccountSupabaseMock({
+      foods: [{ image_path: "user-1/food.webp" }],
+      user: authenticatedUser(),
+    });
+    const adminMock = createAdminSupabaseMock({
+      storageListError: {
+        message: "Storage list failed",
+      },
+    });
+    createServerSupabaseClientMock.mockResolvedValue(serverMock.supabase);
+    createSupabaseAdminClientMock.mockReturnValue(adminMock.supabase);
+
+    const result = await deleteAccount(deleteAccountFormData());
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Uploaded files could not be deleted. Please try again.",
+      fieldErrors: {},
+    });
+    expect(adminMock.removeMock).not.toHaveBeenCalled();
+    expect(adminMock.deleteUserMock).not.toHaveBeenCalled();
   });
 
   it("does not delete the Auth user when account data cannot be prepared", async () => {
@@ -171,6 +205,54 @@ describe("deleteAccountAction", () => {
     });
     expect(createSupabaseAdminClientMock).not.toHaveBeenCalled();
     expect(adminMock.deleteUserMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a safe error when the admin client is missing server configuration", async () => {
+    const serverMock = createDeleteAccountSupabaseMock({
+      user: authenticatedUser(),
+    });
+    createServerSupabaseClientMock.mockResolvedValue(serverMock.supabase);
+    createSupabaseAdminClientMock.mockImplementation(() => {
+      throw new Error(
+        "Missing Supabase admin environment variables: SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY",
+      );
+    });
+
+    const result = await deleteAccount(deleteAccountFormData());
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Account could not be deleted. Please try again.",
+      fieldErrors: {},
+    });
+    expect(serverMock.signOutMock).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(
+      "[profile:deleteAccount] operation failed",
+      expect.objectContaining({
+        message:
+          "Missing Supabase admin environment variables: SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY",
+        operation: "admin.createClient",
+      }),
+    );
+  });
+
+  it("returns a safe error when admin-client initialization fails", async () => {
+    const serverMock = createDeleteAccountSupabaseMock({
+      user: authenticatedUser(),
+    });
+    createServerSupabaseClientMock.mockResolvedValue(serverMock.supabase);
+    createSupabaseAdminClientMock.mockImplementation(() => {
+      throw new Error("Admin client initialization failed");
+    });
+
+    const result = await deleteAccount(deleteAccountFormData());
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Account could not be deleted. Please try again.",
+      fieldErrors: {},
+    });
+    expect(serverMock.signOutMock).not.toHaveBeenCalled();
   });
 
   it("returns a safe error when Auth user deletion fails", async () => {
@@ -212,7 +294,7 @@ describe("deleteAccountAction", () => {
 
     expect(adminMock.removeMock).not.toHaveBeenCalled();
     expect(adminMock.deleteUserMock).toHaveBeenCalledWith("user-1", false);
-    expect(serverMock.signOutMock).toHaveBeenCalled();
+    expect(serverMock.signOutMock).toHaveBeenCalledWith({ scope: "global" });
     expect(redirectMock).toHaveBeenCalledWith("/login?deleted=1");
   });
 });
@@ -336,13 +418,22 @@ function createDeleteAccountSupabaseMock({
 
 function createAdminSupabaseMock({
   deleteUserError = null,
+  storageListError = null,
+  storageObjects = [],
   storageError = null,
 }: {
   deleteUserError?: unknown;
+  storageListError?: unknown;
+  storageObjects?: StorageObject[];
   storageError?: unknown;
 } = {}) {
   const removeMock = vi.fn().mockResolvedValue({ data: [], error: storageError });
+  const listMock = vi.fn().mockResolvedValue({
+    data: storageObjects,
+    error: storageListError,
+  });
   const storageFromMock = vi.fn(() => ({
+    list: listMock,
     remove: removeMock,
   }));
   const deleteUserMock = vi.fn().mockResolvedValue({
@@ -354,6 +445,7 @@ function createAdminSupabaseMock({
 
   return {
     deleteUserMock,
+    listMock,
     removeMock,
     storageFromMock,
     supabase: {
@@ -366,5 +458,21 @@ function createAdminSupabaseMock({
         from: storageFromMock,
       },
     },
+  };
+}
+
+type StorageObject = {
+  id: string;
+  metadata: Record<string, unknown>;
+  name: string;
+  owner: string;
+};
+
+function storageObject(owner: string, name: string): StorageObject {
+  return {
+    id: `${owner}-${name}`,
+    metadata: {},
+    name,
+    owner,
   };
 }

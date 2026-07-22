@@ -12,6 +12,11 @@ import {
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import {
+  OfflineMutationNotice,
+  offlineMutationMessage,
+  useOnlineStatus,
+} from "@/components/pwa/online-status";
 import { UserAvatar } from "@/components/user/user-avatar";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 import {
@@ -92,6 +97,7 @@ export function ProfileContent({ data }: ProfileContentProps) {
 function DeleteAccountDangerZone() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const { isOnline } = useOnlineStatus();
 
   function closeDialog() {
     setIsDialogOpen(false);
@@ -114,9 +120,11 @@ function DeleteAccountDangerZone() {
           </p>
         </div>
         <button
-          className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#DE2624] px-5 py-2.5 text-sm font-semibold text-[#B51E1C] transition hover:bg-[#DE2624]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DE2624]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#DE2624] px-5 py-2.5 text-sm font-semibold text-[#B51E1C] transition hover:bg-[#DE2624]/10 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DE2624]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          disabled={!isOnline}
           onClick={() => setIsDialogOpen(true)}
           ref={deleteButtonRef}
+          title={!isOnline ? offlineMutationMessage : undefined}
           type="button"
         >
           Delete account
@@ -137,6 +145,7 @@ function DeleteAccountModal({ onCancel }: { onCancel: () => void }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmationInputRef = useRef<HTMLInputElement>(null);
   const canDelete = confirmation === "DELETE";
+  const { isOnline } = useOnlineStatus();
 
   useEffect(() => {
     window.requestAnimationFrame(() => confirmationInputRef.current?.focus());
@@ -213,7 +222,15 @@ function DeleteAccountModal({ onCancel }: { onCancel: () => void }) {
           </button>
         </div>
 
-        <form action={formAction} className="mt-5 space-y-5">
+        <form
+          action={formAction}
+          className="mt-5 space-y-5"
+          onSubmit={(event) => {
+            if (!isOnline) {
+              event.preventDefault();
+            }
+          }}
+        >
           {state.message ? (
             <p
               aria-live="assertive"
@@ -256,6 +273,7 @@ function DeleteAccountModal({ onCancel }: { onCancel: () => void }) {
           <p aria-live="polite" className="text-sm font-medium text-muted-foreground" role="status">
             {isPending ? "Deleting account..." : ""}
           </p>
+          <OfflineMutationNotice />
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
@@ -268,7 +286,8 @@ function DeleteAccountModal({ onCancel }: { onCancel: () => void }) {
             </button>
             <button
               className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#DE2624] px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-[#B51E1C] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DE2624]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-              disabled={isPending || !canDelete}
+              disabled={isPending || !canDelete || !isOnline}
+              title={!isOnline ? offlineMutationMessage : undefined}
               type="submit"
             >
               {isPending ? "Deleting..." : "Permanently delete account"}
@@ -291,23 +310,35 @@ function ProfileHeader({
   memberSince: string;
   onEdit: () => void;
 }) {
+  const { isOnline } = useOnlineStatus();
+
   return (
-    <section className="rounded-md border border-border bg-card p-5 shadow-sm sm:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <UserAvatar avatarId={avatarId} size="xl" />
+    <section className="rounded-md border border-border bg-card p-4 shadow-sm sm:p-6">
+      <div
+        className="flex items-center gap-3 sm:justify-between sm:gap-5"
+        data-testid="profile-header-layout"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-5">
+          <UserAvatar
+            avatarId={avatarId}
+            className="h-[4.5rem] w-[4.5rem] sm:h-28 sm:w-28"
+            imageClassName="h-16 w-16 sm:h-24 sm:w-24"
+            size="xl"
+          />
           <div className="min-w-0">
-            <h2 className="text-2xl font-semibold leading-tight text-card-foreground sm:text-3xl">
+            <h2 className="truncate text-xl font-semibold leading-tight text-card-foreground sm:text-3xl">
               {displayName}
             </h2>
-            <p className="mt-2 text-sm font-medium text-muted-foreground">
+            <p className="mt-2 hidden text-sm font-medium text-muted-foreground sm:block">
               {formatTrackingSince(memberSince)}
             </p>
           </div>
         </div>
         <button
-          className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          className="inline-flex min-h-10 w-fit shrink-0 items-center justify-center rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:min-h-11 sm:px-5 sm:py-2.5 sm:text-sm"
+          disabled={!isOnline}
           onClick={onEdit}
+          title={!isOnline ? offlineMutationMessage : undefined}
           type="button"
         >
           Edit profile
@@ -321,31 +352,37 @@ function ProfileStats({ stats }: { stats: ProfileStatsData }) {
   const items = [
     {
       label: "Current streak",
+      mobileLabel: "Streak",
       value: `${formatInteger(stats.currentStreak)} ${
         stats.currentStreak === 1 ? "day" : "days"
       }`,
     },
     {
       label: "Active days",
+      mobileLabel: "Active days",
       value: formatInteger(stats.activeDays),
     },
     {
       label: "Foods logged",
+      mobileLabel: "Foods logged",
       value: formatInteger(stats.foodsLogged),
     },
   ];
 
   return (
-    <section aria-label="Profile statistics" className="grid gap-3 md:grid-cols-3">
+    <section aria-label="Profile statistics" className="grid grid-cols-3 gap-2 md:gap-3">
       {items.map((item) => (
         <article
-          className="rounded-md border border-border bg-card p-4 shadow-sm"
+          className="min-w-0 rounded-md border border-border bg-card p-2.5 shadow-sm sm:p-4"
           key={item.label}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {item.label}
+          <p className="text-[0.625rem] font-semibold uppercase leading-4 tracking-[0.08em] text-muted-foreground sm:text-xs sm:tracking-[0.12em]">
+            <span className="sm:hidden">{item.mobileLabel}</span>
+            <span className="hidden sm:inline">{item.label}</span>
           </p>
-          <p className="mt-2 text-2xl font-semibold text-card-foreground">{item.value}</p>
+          <p className="mt-1 break-words text-lg font-semibold leading-tight text-card-foreground sm:mt-2 sm:text-2xl">
+            {item.value}
+          </p>
         </article>
       ))}
     </section>
@@ -416,15 +453,14 @@ function ProfileEditorModal({
   const [draftValues, setDraftValues] = useState(initialValues);
   const dialogRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const emailInputRef = useRef<HTMLInputElement>(null);
   const avatarGroupRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const processedProfileStateRef = useRef<ProfileIdentityValues | null>(null);
   const router = useRouter();
+  const { isOnline } = useOnlineStatus();
   const hasChanges =
     draftValues.avatarId !== initialValues.avatarId ||
-    draftValues.displayName.trim() !== initialValues.displayName ||
-    normalizeEmail(draftValues.email) !== normalizeEmail(initialValues.email);
+    draftValues.displayName.trim() !== initialValues.displayName;
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
@@ -468,11 +504,6 @@ function ProfileEditorModal({
       return;
     }
 
-    if (state.fieldErrors.email) {
-      emailInputRef.current?.focus();
-      return;
-    }
-
     if (state.fieldErrors.avatarId) {
       (
         avatarGroupRef.current?.querySelector<HTMLButtonElement>(
@@ -483,6 +514,11 @@ function ProfileEditorModal({
   }, [state.fieldErrors, state.status]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!isOnline) {
+      event.preventDefault();
+      return;
+    }
+
     if (!hasChanges) {
       event.preventDefault();
     }
@@ -543,7 +579,7 @@ function ProfileEditorModal({
               Edit profile
             </h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Update your display name, email, and avatar.
+              Update your display name and avatar.
             </p>
           </div>
           <button
@@ -600,40 +636,6 @@ function ProfileEditorModal({
             ) : null}
           </label>
 
-          <label className="mt-5 block">
-            <span className="text-sm font-semibold text-foreground">Email</span>
-            <input
-              aria-describedby={state.fieldErrors.email ? "profile-email-error" : undefined}
-              aria-invalid={Boolean(state.fieldErrors.email)}
-              autoComplete="email"
-              className={cn(
-                "mt-2 min-h-12 w-full rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15",
-                state.fieldErrors.email && "border-coral focus:border-coral focus:ring-coral/15",
-              )}
-              name="email"
-              onChange={(event) => {
-                const value = event.currentTarget.value;
-
-                setDraftValues((current) => ({
-                  ...current,
-                  email: value,
-                }));
-              }}
-              ref={emailInputRef}
-              type="email"
-              value={draftValues.email}
-            />
-            {state.fieldErrors.email ? (
-              <span
-                className="mt-1.5 block text-xs font-medium text-coral"
-                id="profile-email-error"
-                role="alert"
-              >
-                {state.fieldErrors.email}
-              </span>
-            ) : null}
-          </label>
-
           <AvatarPicker
             error={state.fieldErrors.avatarId}
             onChange={(avatarId) => {
@@ -647,6 +649,7 @@ function ProfileEditorModal({
           />
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <OfflineMutationNotice className="sm:mr-auto sm:self-center" />
             <button
               className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={handleCancel}
@@ -716,11 +719,13 @@ function AvatarPicker({
 
 function ProfileSaveButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
+  const { isOnline } = useOnlineStatus();
 
   return (
     <button
       className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] disabled:cursor-not-allowed disabled:opacity-70"
-      disabled={pending || disabled}
+      disabled={pending || disabled || !isOnline}
+      title={!isOnline ? offlineMutationMessage : undefined}
       type="submit"
     >
       {pending ? "Saving..." : "Save profile"}
@@ -795,10 +800,6 @@ function formatReadableDate(value: string) {
     month: "long",
     year: "numeric",
   }).format(date);
-}
-
-function normalizeEmail(value: string) {
-  return value.trim().toLowerCase();
 }
 
 function getFocusableElements(element: HTMLElement) {

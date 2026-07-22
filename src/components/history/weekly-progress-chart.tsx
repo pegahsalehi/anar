@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import type {
   WeeklyProgressData,
   WeeklyProgressMetric,
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 type WeeklyProgressChartProps = {
   data: WeeklyProgressData;
+  onDateSelect?: (date: string) => void;
 };
 
 type MetricConfig = {
@@ -87,7 +88,7 @@ const metrics: WeeklyProgressMetric[] = [
   "fat",
 ];
 
-export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
+export function WeeklyProgressChart({ data, onDateSelect }: WeeklyProgressChartProps) {
   const [selectedMetric, setSelectedMetric] = useState<WeeklyProgressMetric>("calories");
   const metric = metricConfigs[selectedMetric];
   const chartMax = useMemo(() => {
@@ -197,15 +198,16 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
             const tooltip = buildTooltip(day.date, metric, value);
 
             return (
-              <Link
+              <button
                 aria-label={`${day.label}, ${day.date}. ${tooltip}. ${targetStatusLabel}`}
                 className={cn(
                   "group relative flex min-w-0 flex-col items-center gap-2 rounded-sm p-1.5 outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                 )}
-                href={`/history/${day.date}`}
                 key={day.date}
+                onClick={() => onDateSelect?.(day.date)}
                 style={day.isToday ? { backgroundColor: metric.haloColor } : undefined}
                 title={tooltip}
+                type="button"
               >
                 <span
                   className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-48 -translate-x-1/2 rounded-sm border bg-card px-3 py-2 text-left text-xs leading-5 text-foreground opacity-0 shadow-soft transition group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -269,7 +271,7 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
                   <span className="sm:hidden">{day.shortLabel}</span>
                   <span className="hidden sm:inline">{day.label}</span>
                 </span>
-              </Link>
+              </button>
             );
           })}
         </div>

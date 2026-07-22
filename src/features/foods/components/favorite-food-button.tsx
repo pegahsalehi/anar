@@ -1,4 +1,7 @@
+"use client";
+
 import { Heart } from "lucide-react";
+import { offlineMutationMessage, useOnlineStatus } from "@/components/pwa/online-status";
 import { toggleFavoriteFoodAction } from "@/features/foods/actions";
 import { cn } from "@/lib/utils";
 
@@ -9,12 +12,23 @@ type FavoriteFoodButtonProps = {
 
 export function FavoriteFoodButton({ foodId, isFavorite }: FavoriteFoodButtonProps) {
   const action = toggleFavoriteFoodAction.bind(null, foodId, !isFavorite);
+  const { isOnline } = useOnlineStatus();
+  const label = isFavorite ? "Remove from favorites" : "Add to favorites";
 
   return (
-    <form action={action}>
+    <form
+      action={action}
+      onSubmit={(event) => {
+        if (!isOnline) {
+          event.preventDefault();
+        }
+      }}
+    >
       <button
-        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-primary/70 hover:text-foreground"
+        aria-label={isOnline ? label : `${label}. ${offlineMutationMessage}`}
+        className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition hover:bg-surface-soft hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        disabled={!isOnline}
+        title={!isOnline ? offlineMutationMessage : undefined}
         type="submit"
       >
         <Heart

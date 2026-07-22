@@ -5,10 +5,17 @@ import { Mail } from "lucide-react";
 import { forgotPasswordAction } from "@/features/auth/actions";
 import { AuthMessage } from "@/features/auth/components/auth-message";
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button";
-import { initialAuthState } from "@/features/auth/types";
+import { initialAuthState, type AuthActionState } from "@/features/auth/types";
 
-export function ForgotPasswordForm() {
-  const [state, formAction] = useActionState(forgotPasswordAction, initialAuthState);
+type ForgotPasswordFormProps = {
+  initialState?: AuthActionState;
+};
+
+export function ForgotPasswordForm({ initialState }: ForgotPasswordFormProps) {
+  const [state, formAction] = useActionState(
+    forgotPasswordAction,
+    initialState ?? initialAuthState,
+  );
 
   return (
     <form action={formAction} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">

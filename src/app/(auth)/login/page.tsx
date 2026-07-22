@@ -9,21 +9,15 @@ export const metadata = {
 
 type LoginPageProps = {
   searchParams: Promise<{
+    auth_error?: string;
     deleted?: string;
     next?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { deleted, next } = await searchParams;
-  const initialState =
-    deleted === "1"
-      ? {
-          status: "success" as const,
-          message: "Your account has been permanently deleted.",
-          fieldErrors: {},
-        }
-      : undefined;
+  const { auth_error: authError, deleted, next } = await searchParams;
+  const initialState = getInitialLoginState({ authError, deleted });
 
   return (
     <section className="w-full">
@@ -48,4 +42,46 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </div>
     </section>
   );
+}
+
+function getInitialLoginState({
+  authError,
+  deleted,
+}: {
+  authError?: string;
+  deleted?: string;
+}) {
+  if (deleted === "1") {
+    return {
+      status: "success" as const,
+      message: "Your account has been permanently deleted.",
+      fieldErrors: {},
+    };
+  }
+
+  if (!authError) {
+    return undefined;
+  }
+
+  return {
+    status: "error" as const,
+    message: getAuthCallbackErrorMessage(authError),
+    fieldErrors: {},
+  };
+}
+
+function getAuthCallbackErrorMessage(code: string) {
+  if (code === "auth_link_expired") {
+    return "That authentication link has expired. Please request a new one.";
+  }
+
+  if (code === "auth_link_invalid") {
+    return "That authentication link is invalid or has already been used.";
+  }
+
+  if (code === "auth_provider_error") {
+    return "The authentication provider could not complete the request. Please try again.";
+  }
+
+  return "Authentication could not be completed. Please try again.";
 }

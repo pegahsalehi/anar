@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSafeRedirectPath } from "@/features/auth/redirects";
@@ -11,6 +10,7 @@ import {
   signupSchema,
 } from "@/features/auth/schemas";
 import type { AuthActionState, AuthFieldErrors } from "@/features/auth/types";
+import { createApplicationUrl } from "@/lib/application-url";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function loginAction(
@@ -46,13 +46,14 @@ export async function signupAction(
     return validationError(parsed.error);
   }
 
-  const origin = await getRequestOrigin();
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/today`,
+      emailRedirectTo: createApplicationUrl("/auth/callback", {
+        next: "/today",
+      }).toString(),
       data: {
         display_name: parsed.data.displayName || null,
         timezone: parsed.data.timezone || "UTC",
@@ -86,10 +87,11 @@ export async function forgotPasswordAction(
     return validationError(parsed.error);
   }
 
-  const origin = await getRequestOrigin();
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    redirectTo: createApplicationUrl("/auth/callback", {
+      next: "/reset-password",
+    }).toString(),
   });
 
   if (error) {
@@ -187,9 +189,4 @@ function translateAuthError(message: string) {
   }
 
   return "Something went wrong. Please try again.";
-}
-
-async function getRequestOrigin() {
-  const headerStore = await headers();
-  return headerStore.get("origin") ?? "http://localhost:3000";
 }

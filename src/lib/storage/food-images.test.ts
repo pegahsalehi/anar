@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildFoodImagePath,
+  createSignedImageUrlMap,
+  foodImagesBucket,
   maxFoodImageSizeBytes,
+  removeFoodImage,
   validateFoodImage,
   type FoodImageFile,
 } from "@/lib/storage/food-images";
+import { DEFAULT_FOOD_IMAGE_SRC } from "@/lib/food-image";
 
 describe("food image storage helpers", () => {
   afterEach(() => {
@@ -38,6 +42,41 @@ describe("food image storage helpers", () => {
       ok: false,
       error: "Images must be 1 MB or smaller.",
     });
+  });
+
+  it("does not pass the public fallback image to signed URL creation", async () => {
+    const createSignedUrls = vi.fn().mockResolvedValue({
+      data: [{ path: "user-123/food.webp", signedUrl: "/signed/food.webp" }],
+      error: null,
+    });
+    const from = vi.fn(() => ({ createSignedUrls }));
+    const supabase = {
+      storage: { from },
+    };
+
+    const result = await createSignedImageUrlMap(supabase as never, [
+      DEFAULT_FOOD_IMAGE_SRC,
+      "user-123/food.webp",
+      null,
+    ]);
+
+    expect(from).toHaveBeenCalledWith(foodImagesBucket);
+    expect(createSignedUrls).toHaveBeenCalledWith(["user-123/food.webp"], 60 * 60);
+    expect(result.get("user-123/food.webp")).toBe("/signed/food.webp");
+    expect(result.has(DEFAULT_FOOD_IMAGE_SRC)).toBe(false);
+  });
+
+  it("does not remove the public fallback image from storage", async () => {
+    const remove = vi.fn();
+    const from = vi.fn(() => ({ remove }));
+    const supabase = {
+      storage: { from },
+    };
+
+    await removeFoodImage(supabase as never, DEFAULT_FOOD_IMAGE_SRC);
+
+    expect(from).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
   });
 });
 

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ImagePlus, Plus, Search } from "lucide-react";
 import { FoodCard } from "@/components/foods/food-card";
 import { PageHeader } from "@/components/layout/page-header";
+import { OnlineOnlyLink } from "@/components/pwa/online-status";
 import { IllustratedEmptyState } from "@/components/ui/illustrated-empty-state";
 import { getAuthenticatedFoods } from "@/features/foods/queries";
 
@@ -29,13 +29,13 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
         title="Food Library"
         description="Your reusable foods with nutrition values per 100 g."
         action={
-          <Link
+          <OnlineOnlyLink
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982] sm:min-h-12 sm:px-5 sm:py-3"
             href="/foods/new"
           >
             <Plus aria-hidden="true" className="h-5 w-5" />
             New food
-          </Link>
+          </OnlineOnlyLink>
         }
       />
 
@@ -85,13 +85,13 @@ export default async function FoodsPage({ searchParams }: FoodsPageProps) {
           }
           illustrationSrc="/images/empty-states/nutrition-book.png"
           action={
-            <Link
+            <OnlineOnlyLink
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-base font-semibold text-primary-foreground shadow-soft transition hover:bg-[#49C995] active:bg-[#38B982]"
               href="/foods/new"
             >
               <ImagePlus aria-hidden="true" className="h-5 w-5" />
               Create food
-            </Link>
+            </OnlineOnlyLink>
           }
         />
       )}

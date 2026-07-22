@@ -8,6 +8,7 @@ import type { DeleteAccountActionState } from "@/features/profile/types";
 import type { Database } from "@/types/database";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+type AdminSupabaseClient = ReturnType<typeof createSupabaseAdminClient>;
 type SupabaseErrorLike = {
   code?: string;
   details?: string | null;
@@ -22,8 +23,16 @@ type FoodLogStorageRow = Pick<
   Database["public"]["Tables"]["food_logs"]["Row"],
   "image_path_snapshot"
 >;
+type StorageListItem = {
+  id?: string | null;
+  metadata?: unknown;
+  name: string;
+  owner?: string | null;
+};
 
 const deleteConfirmation = "DELETE";
+const storageListPageSize = 100;
+const storageRemoveBatchSize = 100;
 const invalidConfirmationMessage = "Type DELETE to confirm account deletion.";
 const expiredSessionMessage = "Your session has expired. Please sign in again.";
 const databaseCleanupMessage =
@@ -76,18 +85,25 @@ export async function deleteAccountAction(
     return deleteAccountError(authDeletionMessage);
   }
 
-  if (storagePathsResult.paths.length > 0) {
-    const { error: storageError } = await adminSupabase.storage
-      .from(foodImagesBucket)
-      .remove(storagePathsResult.paths);
+  const listedStoragePathsResult = await listAccountOwnedStoragePaths(adminSupabase, user.id);
 
-    if (storageError) {
-      logDeleteAccountError("storage.remove", storageError, {
-        userId: user.id,
-      });
+  if (!listedStoragePathsResult.ok) {
+    return deleteAccountError(storageCleanupMessage);
+  }
 
-      return deleteAccountError(storageCleanupMessage);
-    }
+  const storagePathsToRemove = getStoragePathsToRemove({
+    databasePaths: storagePathsResult.paths,
+    listedOwnedPaths: listedStoragePathsResult.paths,
+    userId: user.id,
+  });
+  const storageRemoveResult = await removeAccountStoragePaths(
+    adminSupabase,
+    storagePathsToRemove,
+    user.id,
+  );
+
+  if (!storageRemoveResult.ok) {
+    return deleteAccountError(storageCleanupMessage);
   }
 
   const { error: deleteUserError } = await adminSupabase.auth.admin.deleteUser(user.id, false);
@@ -100,7 +116,7 @@ export async function deleteAccountAction(
     return deleteAccountError(authDeletionMessage);
   }
 
-  const { error: signOutError } = await supabase.auth.signOut();
+  const { error: signOutError } = await supabase.auth.signOut({ scope: "global" });
 
   if (signOutError) {
     logDeleteAccountError("auth.signOut", signOutError, {
@@ -109,6 +125,98 @@ export async function deleteAccountAction(
   }
 
   redirect("/login?deleted=1");
+}
+
+async function listAccountOwnedStoragePaths(
+  supabase: AdminSupabaseClient,
+  userId: string,
+): Promise<{ ok: true; paths: string[] } | { ok: false }> {
+  const bucket = supabase.storage.from(foodImagesBucket);
+  const paths: string[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await bucket.list(userId, {
+      limit: storageListPageSize,
+      offset,
+      sortBy: {
+        column: "name",
+        order: "asc",
+      },
+    });
+
+    if (error) {
+      logDeleteAccountError("storage.list", error, { userId });
+      return { ok: false };
+    }
+
+    const items = (data ?? []) as StorageListItem[];
+
+    items.forEach((item) => {
+      const path = `${userId}/${item.name}`;
+
+      if (isOwnedStoragePath(userId, path) && item.owner === userId && isStorageFile(item)) {
+        paths.push(path);
+      }
+    });
+
+    if (items.length < storageListPageSize) {
+      break;
+    }
+
+    offset += storageListPageSize;
+  }
+
+  return {
+    ok: true,
+    paths: dedupeStoragePaths(paths),
+  };
+}
+
+function getStoragePathsToRemove({
+  databasePaths,
+  listedOwnedPaths,
+  userId,
+}: {
+  databasePaths: string[];
+  listedOwnedPaths: string[];
+  userId: string;
+}) {
+  const listedOwnedPathSet = new Set(listedOwnedPaths);
+  const verifiedDatabasePaths = databasePaths.filter((path) => listedOwnedPathSet.has(path));
+
+  return dedupeStoragePaths(
+    [...listedOwnedPaths, ...verifiedDatabasePaths].filter((path) =>
+      isOwnedStoragePath(userId, path),
+    ),
+  );
+}
+
+async function removeAccountStoragePaths(
+  supabase: AdminSupabaseClient,
+  paths: string[],
+  userId: string,
+): Promise<{ ok: true } | { ok: false }> {
+  if (paths.length === 0) {
+    return { ok: true };
+  }
+
+  const bucket = supabase.storage.from(foodImagesBucket);
+
+  for (let index = 0; index < paths.length; index += storageRemoveBatchSize) {
+    const batch = paths.slice(index, index + storageRemoveBatchSize);
+    const { error } = await bucket.remove(batch);
+
+    if (error) {
+      logDeleteAccountError("storage.remove", error, {
+        userId,
+      });
+
+      return { ok: false };
+    }
+  }
+
+  return { ok: true };
 }
 
 async function getAccountStoragePaths(
@@ -154,16 +262,31 @@ async function getAccountStoragePaths(
 }
 
 function getOwnedStoragePaths(userId: string, paths: Array<string | null | undefined>) {
-  return Array.from(
-    new Set(
-      paths.filter(
-        (path): path is string =>
-          typeof path === "string" &&
-          path.length > 0 &&
-          path.split("/")[0] === userId,
-      ),
-    ),
+  return dedupeStoragePaths(
+    paths.filter((path): path is string => isOwnedStoragePath(userId, path)),
   );
+}
+
+function isOwnedStoragePath(userId: string, path: unknown): path is string {
+  if (typeof path !== "string") {
+    return false;
+  }
+
+  const segments = path.split("/");
+
+  return (
+    segments.length >= 2 &&
+    segments[0] === userId &&
+    segments.every((segment) => segment.length > 0 && segment !== "." && segment !== "..")
+  );
+}
+
+function isStorageFile(item: StorageListItem) {
+  return Boolean(item.id || item.metadata);
+}
+
+function dedupeStoragePaths(paths: string[]) {
+  return Array.from(new Set(paths));
 }
 
 function deleteAccountError(message: string): DeleteAccountActionState {
@@ -181,10 +304,6 @@ function logDeleteAccountError(
     userId?: string;
   } = {},
 ) {
-  if (process.env.NODE_ENV === "production") {
-    return;
-  }
-
   const normalized = normalizeSupabaseError(error);
 
   console.error("[profile:deleteAccount] operation failed", {

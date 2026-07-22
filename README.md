@@ -133,16 +133,51 @@ Create `.env.local` from `.env.example` and provide your Supabase project creden
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+SUPABASE_SECRET_KEY=your-supabase-secret-key
 ```
+
+`NEXT_PUBLIC_SITE_URL` is the canonical application origin used for Supabase Auth email
+links. Local development may use `http://localhost:3000`. Production must use:
+
+```env
+NEXT_PUBLIC_SITE_URL=https://anar.pegah.no
+```
+
+`SUPABASE_SECRET_KEY` is server-only and is required for permanent account deletion.
+Prefer Supabase's `sb_secret_...` secret key. If the project still uses the legacy
+service-role key, `SUPABASE_SERVICE_ROLE_KEY` is also supported as a compatibility
+fallback. Never put a secret, service-role, or admin key in a `NEXT_PUBLIC_*`
+environment variable.
 
 ### 3. Configure Supabase Auth
 
-Add the local callback URLs to the allowed redirect URLs in Supabase Auth:
+Configure these settings manually in the Supabase Dashboard under
+**Authentication > URL Configuration**. These settings are not changed by this
+repository.
+
+Production Site URL:
 
 ```text
+https://anar.pegah.no
+```
+
+Allowed redirect URLs:
+
+```text
+https://anar.pegah.no/auth/callback
 http://localhost:3000/auth/callback
 http://127.0.0.1:3000/auth/callback
 ```
+
+The app sends exact callback URLs such as
+`https://anar.pegah.no/auth/callback?next=/today`,
+`https://anar.pegah.no/auth/callback?next=/reset-password`, and
+`https://anar.pegah.no/auth/callback?next=/profile`. Supabase matches the allowed
+redirect URL by callback path, so broad production wildcards are not needed for
+this flow. If Supabase email templates use `{{ .SiteURL }}` for action links,
+update them to use `{{ .RedirectTo }}` so the code-supplied callback URL is
+honored.
 
 ### 4. Apply database migrations
 

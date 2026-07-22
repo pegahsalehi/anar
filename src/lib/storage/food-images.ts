@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DEFAULT_FOOD_IMAGE_SRC } from "@/lib/food-image";
 import type { Database } from "@/types/database";
 
 export const foodImagesBucket = "food-images";
@@ -47,7 +48,13 @@ export async function createSignedImageUrlMap(
   supabase: SupabaseClient<Database>,
   paths: Array<string | null | undefined>,
 ) {
-  const uniquePaths = Array.from(new Set(paths.filter((path): path is string => Boolean(path))));
+  const uniquePaths = Array.from(
+    new Set(
+      paths.filter(
+        (path): path is string => Boolean(path) && path !== DEFAULT_FOOD_IMAGE_SRC,
+      ),
+    ),
+  );
 
   if (uniquePaths.length === 0) {
     return new Map<string, string>();
@@ -72,7 +79,7 @@ export async function removeFoodImage(
   supabase: SupabaseClient<Database>,
   path: string | null | undefined,
 ) {
-  if (!path) {
+  if (!path || path === DEFAULT_FOOD_IMAGE_SRC) {
     return;
   }
 
